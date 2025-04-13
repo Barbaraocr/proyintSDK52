@@ -65,6 +65,15 @@ const ProductScreen: React.FC = () => {
         <MaterialIcons name="add-circle-outline" size={48} color="#2E7D32" />
         <Text style={styles.newProductText}>Nuevo producto</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.newProductButton} 
+        onPress={() => router.navigate('/sugerencias')} // Navigate to IconSelectionScreen
+      >
+        <MaterialIcons name="add-circle-outline" size={48} color="#2E7D32" />
+        <Text style={styles.newProductText}>Sugerencias</Text>
+      </TouchableOpacity>
+
     </View>
   );
 };
