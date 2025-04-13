@@ -3,6 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 
 import { router, SearchParams, useLocalSearchParams } from 'expo-router';
 import { getProductoById } from '@/services/Products';
 
+
+
+
 const EditProductScreen: React.FC = () => {
   const { id } = useLocalSearchParams();
 
@@ -105,6 +108,12 @@ const EditProductScreen: React.FC = () => {
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveButtonText}>Aceptar cambios</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.saveButton} 
+      onPress={() => router.navigate('/comparacionprecios')}>
+        <Text style={styles.saveButtonText}>Comparador de precios</Text>
+      </TouchableOpacity>
+
     </ScrollView>
   );
 };
