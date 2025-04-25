@@ -1,99 +1,144 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React from 'react';
+import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
-const sampleProducts = [
-  { id: '1', name: 'Producto', image: 'https://example.com/product1.png' },
-  { id: '2', name: 'Producto', image: 'https://example.com/product2.png' },
-  { id: '3', name: 'Producto', image: 'https://example.com/product3.png' },
-  { id: '4', name: 'Producto', image: 'https://example.com/product4.png' },
+const suggestions = [
+  { id: '1', image: require('../assets/product.png'), liked: true },
+  { id: '2', image: require('../assets/product.png'), liked: true },
+  { id: '3', image: require('../assets/product.png'), liked: true },
+  { id: '4', image: require('../assets/product.png'), liked: true },
+  { id: '5', image: require('../assets/product.png'), liked: false },
 ];
 
-export default function SuggestionsScreen() {
-  const [accepted, setAccepted] = useState<string[]>([]);
-  const [rejected, setRejected] = useState<string[]>([]);
+const tryProducts = [
+  { id: '6', image: require('../assets/product.png') },
+  { id: '7', image: require('../assets/product.png') },
+  { id: '8', image: require('../assets/product.png') },
+  { id: '9', image: require('../assets/product.png') },
+  { id: '10', image: require('../assets/product.png') },
+  { id: '11', image: require('../assets/product.png') },
+  { id: '12', image: require('../assets/product.png') },
+  { id: '13', image: require('../assets/product.png') },
+];
 
-  const handleAccept = (id: string) => {
-    setAccepted([...accepted, id]);
-    setRejected(rejected.filter(rid => rid !== id));
-  };
+export default function SuggestedScreen() {
+  const navigation = useNavigation();
 
-  const handleReject = (id: string) => {
-    setRejected([...rejected, id]);
-    setAccepted(accepted.filter(aid => aid !== id));
-  };
+  const renderSuggestion = ({ item }: any) => (
+    <View style={styles.productContainer}>
+      <Image source={item.image} style={styles.productImage} />
+      <Text style={styles.productText}>Producto</Text>
+      <Ionicons
+        name={item.liked ? 'checkmark-circle' : 'close-circle'}
+        size={24}
+        color={item.liked ? 'green' : 'red'}
+        style={styles.icon}
+      />
+    </View>
+  );
 
-  const renderSuggestedItem = ({ item }: any) => (
-    <View style={styles.productItem}>
-      <Image source={{ uri: item.image }} style={styles.productImage} />
-      <Text style={styles.productName}>{item.name}</Text>
-
-      <View style={styles.iconRow}>
-        <TouchableOpacity onPress={() => handleAccept(item.id)}>
-          <Text style={styles.check}>{accepted.includes(item.id) ? '✅' : '◻️'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleReject(item.id)}>
-          <Text style={styles.cross}>{rejected.includes(item.id) ? '❌' : '◻️'}</Text>
-        </TouchableOpacity>
-      </View>
+  const renderTryProduct = ({ item }: any) => (
+    <View style={styles.tryProductContainer}>
+      <Image source={item.image} style={styles.productImage} />
+      <Text style={styles.productText}>Producto</Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton}>
-        <MaterialIcons name="arrow-back-ios" size={24} color="white" />
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Ionicons name="chevron-back" size={28} color="white" />
       </TouchableOpacity>
 
-      <Text style={styles.sectionTitle}>Sugerencias para ti</Text>
-      <FlatList
-        horizontal
-        data={sampleProducts}
-        keyExtractor={(item) => item.id}
-        renderItem={renderSuggestedItem}
-        contentContainerStyle={styles.horizontalList}
-        showsHorizontalScrollIndicator={false}
-      />
-
-      <Text style={styles.sectionTitle}>Tal vez quieras probar</Text>
-      <View style={styles.grid}>
-        {sampleProducts.map((item) => (
-          <View key={item.id + '-maybe'} style={styles.productItem}>
-            <Image source={{ uri: item.image }} style={styles.productImage} />
-            <Text style={styles.productName}>{item.name}</Text>
-          </View>
-        ))}
+      <View style={styles.card}>
+        <Text style={styles.title}>Sugerencias para ti</Text>
+        <FlatList
+          data={suggestions}
+          horizontal
+          keyExtractor={(item) => item.id}
+          renderItem={renderSuggestion}
+          showsHorizontalScrollIndicator={false}
+        />
       </View>
 
+      <View style={styles.card}>
+        <Text style={styles.title}>Tal vez quieras probar</Text>
+        <FlatList
+          data={tryProducts}
+          numColumns={4}
+          keyExtractor={(item) => item.id}
+          renderItem={renderTryProduct}
+          contentContainerStyle={styles.tryList}
+        />
+      </View>
+
+      <View style={styles.bottomNav}>
+        <Ionicons name="home-outline" size={24} color="black" />
+        <Ionicons name="flame-outline" size={24} color="black" />
+        <Ionicons name="settings-outline" size={24} color="black" />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fefefe' },
-  backButton: { position: 'absolute', top: 40, left: 20 },
-  sectionTitle: { marginTop: 110, marginLeft: 16, fontSize: 16, fontWeight: '600', color: '#3C4F3E' },
-  horizontalList: { paddingHorizontal: 16, marginVertical: 8 },
-  productItem: { marginRight: 16, alignItems: 'center' },
-  productImage: { width: 60, height: 60, borderRadius: 12 },
-  productName: { fontSize: 12, marginTop: 4 },
-  iconRow: { flexDirection: 'row', marginTop: 4, gap: 8 },
-  check: { fontSize: 18 },
-  cross: { fontSize: 18 },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    gap: 12,
-    justifyContent: 'space-between',
-    marginTop: 8,
+  container: { flex: 1, backgroundColor: '#E6F0E9' },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 10,
+  },
+  card: {
+    backgroundColor: 'white',
+    marginTop: 100,
+    marginHorizontal: 20,
+    borderRadius: 10,
+    padding: 10,
+  },
+  title: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 10,
+    color: '#607060',
+  },
+  productContainer: {
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  tryProductContainer: {
+    alignItems: 'center',
+    width: '25%',
+    marginBottom: 20,
+  },
+  productImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 50,
+    marginBottom: 5,
+  },
+  productText: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  icon: {
+    position: 'absolute',
+    bottom: -10,
+    right: -10,
+  },
+  tryList: {
+    alignItems: 'center',
   },
   bottomNav: {
+    position: 'absolute',
+    bottom: 10,
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 12,
-    borderTopWidth: 1,
+    paddingVertical: 10,
     borderTopColor: '#ccc',
-    marginTop: 20,
+    borderTopWidth: 1,
+    backgroundColor: '#fff',
   },
 });
