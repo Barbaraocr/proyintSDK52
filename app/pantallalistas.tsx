@@ -18,7 +18,13 @@ import { getListById } from '@/services/lists';
 import { Producto } from '@/models/Products';
 import { addProductoToList, getProductoById, getProductos, getProductosByListId, markProductoAsComprado } from '@/services/Products';
 import { ProductoLista } from '@/models/ProductsList';
+import { getPurchaseHistoryByFilters, getPurchaseHistoryByDateRange, createPurchaseHistory } from '@/services/purchasehistory';
+import { PurchaseHistory } from '@/models/PurchaseHistory';
+import { getUserIdFromSession } from '@/services/auth';
+
 export default function ListScreen(){
+
+  const [userId, setUserId] = useState<string | null>(null);
 
 const { id } = useLocalSearchParams();
 
@@ -37,6 +43,8 @@ const { id } = useLocalSearchParams();
     if (id && typeof id === 'string') {
       fetchList(id); // Llama a fetchList con el ID del parámetro
     }
+    // → al montar, recupera el userId de sesión:
+    getUserIdFromSession().then(uid => setUserId(uid));
   }, [id]);
   
   
@@ -143,6 +151,31 @@ const { id } = useLocalSearchParams();
   } finally {
   }
 };
+
+const handleBuyProduct = async (item: DetailedProduct) => {
+  if (!userId) {
+    console.error('Usuario no autenticado');
+    return;
+  }
+  try {
+    const compra = new PurchaseHistory(
+      userId,
+      item.productoOriginal?.precio ?? 0,
+      new Date(),
+      item.productoOriginal?.nombre ?? '',
+      selectedList?.listName ?? ''
+    );
+    const idGen = await createPurchaseHistory(compra);
+    compra.idCompra = idGen;
+    console.log('Compra registrada:', compra);
+    // Opcional: refresca el historial en pantalla
+    //router.push('/historialcompras');
+  } catch (err) {
+    console.error('Error creando compra:', err);
+  }
+};
+
+
   
 
 // Función para actualizar el estado en Firestore
@@ -250,13 +283,22 @@ useEffect(() => {
                 ${item.productoOriginal?.precio?.toFixed(2) || '0.00'}
               </Text>
             </View>
-            <TouchableOpacity onPress={() => toggleSelection(item.id || '')}>
-              <Ionicons
-                name={item.isComprado ? 'radio-button-on' : 'radio-button-off'}
-                size={24}
-                color={item.isComprado ? '#4CAF50' : '#888'}
-              />
-            </TouchableOpacity>
+            <View style={styles.actionsRow}>
+              <TouchableOpacity onPress={() => toggleSelection(item.id || '')}>
+                <Ionicons
+                  name={item.isComprado ? 'radio-button-on' : 'radio-button-off'}
+                  size={24}
+                  color={item.isComprado ? '#4CAF50' : '#888'}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.buyButton}
+                onPress={() => handleBuyProduct(item)}
+              >
+                <Text style={styles.buyButtonText}>Comprar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       />
@@ -493,6 +535,22 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: '#C73E3C',
     fontSize: 16,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buyButton: {
+    marginLeft: 16,
+    backgroundColor: '#2E7D32',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+  },
+  buyButtonText: {
+    color: '#fff',
+    fontWeight: '600',
   },
 });
 
