@@ -112,6 +112,23 @@ const { id } = useLocalSearchParams();
     }
   };
   
+  const getGroupedProducts = () => {
+    const groupedByName: { [key: string]: DetailedProduct[] } = {};
+  
+    detailedProducts.forEach(product => {
+      const name = product.productoOriginal?.nombre || 'Sin nombre'; // Cambiar esta linea cuando se agregen los departamentos para agrupar por departamentos
+      if (!groupedByName[name]) {
+        groupedByName[name] = [];
+      }
+      groupedByName[name].push(product);
+    });
+  
+    return Object.entries(groupedByName).map(([name, items]) => ({
+      nombre: name,
+      cantidad: items.length,
+      productos: items,
+    }));
+  };
   const [selectedProducts, setSelectedProducts] = useState<{ [id: string]: boolean }>({});
 
   useEffect(() => {
@@ -130,7 +147,7 @@ const { id } = useLocalSearchParams();
   const [search, setSearch] = useState('');
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isModalVisible, setModalVisible] = useState(false);
-
+  const [grouped, setGrouped] = useState(false);
 
 
   const toggleSelection = async (id: string) => {
@@ -257,17 +274,65 @@ useEffect(() => {
         </TouchableOpacity>
       </View>
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#888" />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Buscar producto"
-          value={search}
-          onChangeText={setSearch}
-        />
+      <View style={styles.searchGroupContainer}>
+        <View style={styles.searchContainer2}>
+          <Ionicons name="search" size={20} color="#888" />
+          <TextInput
+            style={styles.searchInput2}
+            placeholder="Buscar producto"
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+
+        {/* Botón de Agrupar */}
+        <TouchableOpacity style={styles.groupButton} onPress={() => setGrouped(!grouped)}>
+          <Ionicons name="grid-outline" size={24} color="#2E7D32" />
+          <Text style={styles.groupButtonText}>{grouped ? 'Desagrupar' : 'Agrupar'}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Lista de productos */}
+      {grouped ? (
+      <FlatList
+        data={getGroupedProducts()}
+        keyExtractor={(item) => item.nombre}
+        renderItem={({ item }) => (
+          <View style={styles.groupContainer}>
+            <Text style={styles.groupTitle}>{item.nombre} ({item.cantidad})</Text>
+            {item.productos.map(producto => (
+              <View key={producto.id} style={styles.productContainer}>
+                <Image
+                  source={{ uri: producto.productoOriginal?.imagenURL || 'default_image_url' }}
+                  style={styles.productImage}
+                />
+                <View style={styles.productInfo}>
+                  <Text style={styles.productName}>{producto.productoOriginal?.nombre || 'Producto sin nombre'}</Text>
+                  <Text style={styles.productPrice}>
+                    ${producto.productoOriginal?.precio?.toFixed(2) || '0.00'}
+                  </Text>
+                </View>
+                <View style={styles.actionsRow}>
+                  <TouchableOpacity onPress={() => toggleSelection(producto.id || '')}>
+                    <Ionicons
+                      name={producto.isComprado ? 'radio-button-on' : 'radio-button-off'}
+                      size={24}
+                      color={producto.isComprado ? '#4CAF50' : '#888'}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.buyButton}
+                    onPress={() => handleBuyProduct(producto)}
+                  >
+                    <Text style={styles.buyButtonText}>Comprar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      />
+    ) : (
       <FlatList
         data={detailedProducts}
         keyExtractor={(item) => item.id || ''}
@@ -302,6 +367,7 @@ useEffect(() => {
           </View>
         )}
       />
+    )}
 
 
       {/* Montos */}
@@ -551,6 +617,55 @@ const styles = StyleSheet.create({
   buyButtonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  searchGroupContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  
+  searchContainer2: {
+    flex: 1, // ← para que el TextInput ocupe todo el espacio posible
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    marginRight: 8, // ← separación del botón
+  },
+  
+  searchInput2: {
+    flex: 1,
+    paddingVertical: 8,
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  
+  groupButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e0f2e9',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  
+  groupButtonText: {
+    marginLeft: 6,
+    fontSize: 14,
+    color: '#2E7D32',
+    fontWeight: 'bold',
+  },
+  groupContainer: {
+    marginBottom: 16,
+    backgroundColor: '#e0f2f1',
+    padding: 10,
+    borderRadius: 8,
+  },
+  groupTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
 });
 
