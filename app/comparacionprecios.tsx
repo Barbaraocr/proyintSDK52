@@ -1,43 +1,58 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const productExample = {
   name: 'Lechuga',
   category: 'Verduras',
   supermarket: 'Super A',
   price: 30.0,
-  icon: 'https://example.com/icon1.png',
+  icon: 'https://gallery.yopriceville.com/var/resizes/Free-Clipart-Pictures/Fruit-PNG/Plate_with_Fruits_PNG_Clipart_Image.png?m=1629831856',
 };
 
 const Comparacionprecios = () => {
+  const navigation = useNavigation();
   const [product1, setProduct1] = useState(productExample);
-  const [product2, setProduct2] = useState({ ...productExample, price: 30.0 });
+  const [product2, setProduct2] = useState({ ...productExample, price: 35.0 });
 
   const priceDifference = Math.abs(product1.price - product2.price);
   const isProduct1Cheaper = product1.price < product2.price;
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton}>
-        <MaterialIcons name="arrow-back-ios" size={24} color="white" />
-      </TouchableOpacity>
+      {/* Cabecera verde con curva hacia abajo */}
+      <View style={styles.headerContainer}>
+        <View style={styles.greenHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={styles.backIcon}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Comparador de precios</Text>
+        </View>
+        <View style={styles.curvedBottom} />
+      </View>
 
-      <Text style={styles.title}>Comparador de precios</Text>
-
+      {/* Contenido de comparación */}
       <View style={styles.comparisonRow}>
         {[product1, product2].map((product, index) => (
           <View style={styles.column} key={index}>
-            <Image source={{ uri: product.icon }} style={styles.icon} />
-            <Text style={styles.arrow}>
-              {index === 0
-                ? isProduct1Cheaper
-                  ? '⬇️'
-                  : '⬆️'
-                : isProduct1Cheaper
-                ? '⬆️'
-                : '⬇️'}
-            </Text>
+            <View style={styles.imageArrowContainer}>
+              <Image source={{ uri: product.icon }} style={styles.icon} />
+              <AntDesign
+                name={
+                  (index === 0 && isProduct1Cheaper) || (index === 1 && !isProduct1Cheaper)
+                    ? 'arrowdown'
+                    : 'arrowup'
+                }
+                size={24}
+                color={
+                  (index === 0 && isProduct1Cheaper) || (index === 1 && !isProduct1Cheaper)
+                    ? 'green'
+                    : 'red'
+                }
+                style={styles.arrowIcon}
+              />
+            </View>
 
             <Text style={styles.label}>Producto</Text>
             <View style={styles.card}>
@@ -65,20 +80,67 @@ const Comparacionprecios = () => {
       <View style={styles.differenceBox}>
         <Text style={styles.differenceValue}>${priceDifference.toFixed(2)}</Text>
       </View>
-
-      
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f6f6f6' },
-  backButton: { position: 'absolute', top: 40, left: 20 },
-  title: { marginTop: 100, marginLeft: 20, fontSize: 16, fontWeight: 'bold' },
-  comparisonRow: { flexDirection: 'row', justifyContent: 'space-around', padding: 10 },
+  container: { flex: 1, backgroundColor: '#ffff' },
+  headerContainer: {
+    position: 'relative',
+    backgroundColor: '#3F704D',
+    zIndex: 1,
+  },
+  greenHeader: {
+    height: 220,
+    borderBottomLeftRadius: 100,
+    borderBottomRightRadius: 100,
+    backgroundColor: '#3F704D',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingLeft: 20,
+    zIndex: 1,
+  },
+  curvedBottom: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    marginTop: -40, // traslape sobre la curva
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    paddingTop: 40,
+    zIndex: 2,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 10,
+  },
+  backIcon: {
+    color: '#FFF',
+    fontSize: 28,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginTop: 60,
+  },
+  comparisonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 10,
+    marginTop: 40,
+  },
   column: { alignItems: 'center', width: '45%' },
+  imageArrowContainer: {
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   icon: { width: 60, height: 60, borderRadius: 30 },
-  arrow: { fontSize: 20, marginVertical: 4 },
+  arrowIcon: {
+    marginTop: 4,
+  },
   card: {
     backgroundColor: '#e0e0e0',
     borderRadius: 16,
@@ -113,14 +175,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#222',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-    marginTop: 30,
   },
 });
 
