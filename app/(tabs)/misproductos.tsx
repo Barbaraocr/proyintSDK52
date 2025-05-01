@@ -66,6 +66,7 @@ const ProductScreen: React.FC = () => {
         <Text style={styles.newProductText}>Nuevo producto</Text>
       </TouchableOpacity>
 
+
       <TouchableOpacity 
         style={styles.newProductButton} 
         onPress={() => router.navigate('/sugerencias')} // Navigate to IconSelectionScreen
