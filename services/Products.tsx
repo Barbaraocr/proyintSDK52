@@ -46,6 +46,21 @@ export async function addProductoToList(productoLista: ProductoLista, cantidad: 
     cantidad: cantidad
   });
 }
+// Obtener productos por categoría
+export async function getProductosByCategory(categoryName: string): Promise<Producto[]> {
+  const productosRef = collection(db, 'productos');
+  const q = query(productosRef, where('categoria', '==', categoryName)); // Assuming each product has a 'categoria' field
+  
+  const querySnapshot = await getDocs(q);
+  const productos: Producto[] = [];
+  
+  querySnapshot.forEach((doc) => {
+    const producto = Producto.fromFirestore(doc);
+    productos.push(producto);
+  });
+
+  return productos;
+}
 
 // Obtener productos en una lista específica
 export async function getProductosByListId(listaId: string): Promise<ProductoLista[]> {

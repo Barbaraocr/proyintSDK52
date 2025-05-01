@@ -53,7 +53,9 @@ const { id } = useLocalSearchParams();
   const [catalogProducts, setcatalogProducts] = useState<Producto[]>([]); // Estado de carga
   const [loadChanges, setLoadChanges] = useState<boolean>(); // Estado de carga
 
-  
+  const [suggestedProducts, setSuggestedProducts] = useState<Producto[]>([]);
+  const [isSuggestedVisible, setSuggestedVisible] = useState(false);
+
   
   
   const [products, setProducts] = useState<ProductoLista[]>([]); // Estado de carga
@@ -422,7 +424,7 @@ useEffect(() => {
               style={styles.newProductButton}
               onPress={() => {
                 setModalVisible(false);
-                router.push('/agregarproducto');
+                router.push('/nuevoagregarproducto');
               }}
             >
               <MaterialIcons name="add-circle-outline" size={48} color="#2E7D32" />
