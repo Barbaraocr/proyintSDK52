@@ -1,219 +1,262 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Modal,
-  FlatList,
-  Image,
-  StyleSheet,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
+import { AntDesign } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
-const ProductSelectionScreen = () => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectingProductFor, setSelectingProductFor] = useState<1 | 2>(1);
+const productExample = {
+  name: 'Lechuga',
+  category: 'Verduras',
+  supermarket: 'Super A',
+  price: 30.0,
+  icon: 'https://gallery.yopriceville.com/var/resizes/Free-Clipart-Pictures/Fruit-PNG/Plate_with_Fruits_PNG_Clipart_Image.png?m=1629831856',
+};
 
-  const [selectedProduct1, setSelectedProduct1] = useState({ name: '', image: null });
-  const [price1, setPrice1] = useState('');
-  const [quantity1, setQuantity1] = useState('');
+const Comparacionprecios = () => {
+  const navigation = useNavigation();
+  const [input1, setInput1] = useState({ name: '', category: '', supermarket: '', price: '' });
+  const [input2, setInput2] = useState({ name: '', category: '', supermarket: '', price: '' });
 
-  const [selectedProduct2, setSelectedProduct2] = useState({ name: '', image: null });
-  const [price2, setPrice2] = useState('');
-  const [quantity2, setQuantity2] = useState('');
+  const [product1, setProduct1] = useState(productExample);
+  const [product2, setProduct2] = useState({ ...productExample, price: 35.0 });
 
-  const products = [
-    { name: 'Manzana', image: { uri: 'https://via.placeholder.com/100' } },
-    { name: 'Banana', image: { uri: 'https://via.placeholder.com/100' } },
-    { name: 'Naranja', image: { uri: 'https://via.placeholder.com/100' } },
-    { name: 'Uvas', image: { uri: 'https://via.placeholder.com/100' } },
-  ];
-  
+  const priceDifference = Math.abs(product1.price - product2.price);
+  const isProduct1Cheaper = product1.price < product2.price;
 
-  const handleProductSelect = (product: any) => {
-    if (selectingProductFor === 1) {
-      setSelectedProduct1(product);
-    } else {
-      setSelectedProduct2(product);
+  const handleCompare = () => {
+    if (
+      input1.name && input1.category && input1.supermarket && input1.price &&
+      input2.name && input2.category && input2.supermarket && input2.price
+    ) {
+      setProduct1({ ...input1, price: parseFloat(input1.price), icon: productExample.icon });
+      setProduct2({ ...input2, price: parseFloat(input2.price), icon: productExample.icon });
     }
-    setModalVisible(false);
+  };
+
+  const resetFields = () => {
+    setInput1({ name: '', category: '', supermarket: '', price: '' });
+    setInput2({ name: '', category: '', supermarket: '', price: '' });
+    setProduct1(productExample);
+    setProduct2({ ...productExample, price: 35.0 });
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Producto 1</Text>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => {
-          setSelectingProductFor(1);
-          setModalVisible(true);
-        }}
-      >
-        <Ionicons name="add-circle-outline" size={24} color="#2E7D32" />
-        <Text style={styles.addButtonText}>Seleccionar producto</Text>
-      </TouchableOpacity>
-      {selectedProduct1.name !== '' && (
-        <View style={styles.imageArrowContainer}>
-          {selectedProduct1?.image && (
-  <Image source={selectedProduct1.image} style={styles.productImage} />
-)}
-
-          <Text>{selectedProduct1.name}</Text>
-        </View>
-      )}
-      <TextInput
-        placeholder="Precio"
-        keyboardType="numeric"
-        style={styles.input}
-        value={price1}
-        onChangeText={setPrice1}
-      />
-      <TextInput
-        placeholder="Cantidad"
-        keyboardType="numeric"
-        style={styles.input}
-        value={quantity1}
-        onChangeText={setQuantity1}
-      />
-
-      <Text style={styles.label}>Producto 2</Text>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => {
-          setSelectingProductFor(2);
-          setModalVisible(true);
-        }}
-      >
-        <Ionicons name="add-circle-outline" size={24} color="#2E7D32" />
-        <Text style={styles.addButtonText}>Seleccionar producto</Text>
-      </TouchableOpacity>
-      {selectedProduct2.name !== '' && (
-        <View style={styles.imageArrowContainer}>
-          {selectedProduct2?.image && (
-  <Image source={selectedProduct2.image} style={styles.productImage} />
-)}
-
-          <Text>{selectedProduct2.name}</Text>
-        </View>
-      )}
-      <TextInput
-        placeholder="Precio"
-        keyboardType="numeric"
-        style={styles.input}
-        value={price2}
-        onChangeText={setPrice2}
-      />
-      <TextInput
-        placeholder="Cantidad"
-        keyboardType="numeric"
-        style={styles.input}
-        value={quantity2}
-        onChangeText={setQuantity2}
-      />
-
-      <Modal visible={modalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Selecciona un producto</Text>
-          <FlatList
-            data={products}
-            keyExtractor={(item) => item.name}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.productItem}
-                onPress={() => handleProductSelect(item)}
-              >
-                <Image source={item.image} style={styles.productImage} />
-                <Text style={styles.productName}>{item.name}</Text>
-              </TouchableOpacity>
-            )}
-          />
-          <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>Cerrar</Text>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 20 }}>
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <View style={styles.greenHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
+          <Text style={styles.title}>Comparador de precios</Text>
         </View>
-      </Modal>
-    </View>
+        <View style={styles.curvedBottom} />
+      </View>
+
+      
+      {/* Entradas de usuario */}
+      <View style={styles.inputsSection}>
+        <Text style={styles.label}>Producto 1:</Text>
+        <TextInput placeholder="Nombre" value={input1.name} onChangeText={(text) => setInput1({ ...input1, name: text })} style={styles.input} />
+        <TextInput placeholder="Categoría" value={input1.category} onChangeText={(text) => setInput1({ ...input1, category: text })} style={styles.input} />
+        <TextInput placeholder="Supermercado" value={input1.supermarket} onChangeText={(text) => setInput1({ ...input1, supermarket: text })} style={styles.input} />
+        <TextInput placeholder="Precio" value={input1.price} keyboardType="numeric" onChangeText={(text) => setInput1({ ...input1, price: text })} style={styles.input} />
+
+        <Text style={styles.label}>Producto 2:</Text>
+        <TextInput placeholder="Nombre" value={input2.name} onChangeText={(text) => setInput2({ ...input2, name: text })} style={styles.input} />
+        <TextInput placeholder="Categoría" value={input2.category} onChangeText={(text) => setInput2({ ...input2, category: text })} style={styles.input} />
+        <TextInput placeholder="Supermercado" value={input2.supermarket} onChangeText={(text) => setInput2({ ...input2, supermarket: text })} style={styles.input} />
+        <TextInput placeholder="Precio" value={input2.price} keyboardType="numeric" onChangeText={(text) => setInput2({ ...input2, price: text })} style={styles.input} />
+
+        <TouchableOpacity onPress={handleCompare} style={styles.compareButton}>
+          <Text style={styles.compareText}>Comparar</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Resultados de comparación */}
+      <View style={styles.comparisonRow}>
+        {[product1, product2].map((product, index) => (
+          <View style={styles.column} key={index}>
+            <View style={styles.imageArrowContainer}>
+              <Image source={{ uri: product.icon }} style={styles.icon} />
+              <AntDesign
+                name={
+                  (index === 0 && isProduct1Cheaper) || (index === 1 && !isProduct1Cheaper)
+                    ? 'arrowdown'
+                    : 'arrowup'
+                }
+                size={24}
+                color={
+                  (index === 0 && isProduct1Cheaper) || (index === 1 && !isProduct1Cheaper)
+                    ? 'green'
+                    : 'red'
+                }
+                style={styles.arrowIcon}
+              />
+            </View>
+
+            <Text style={styles.label}>Producto</Text>
+            <View style={styles.card}>
+              <Text style={styles.label}>Nombre:</Text>
+              <TextInput editable={false} value={product.name} style={styles.input} />
+
+              <Text style={styles.label}>Categoría:</Text>
+              <TextInput editable={false} value={product.category} style={styles.input} />
+
+              <Text style={styles.label}>Supermercado:</Text>
+              <TextInput editable={false} value={product.supermarket} style={styles.input} />
+
+              <Text style={styles.label}>Precio:</Text>
+              <TextInput
+                editable={false}
+                value={`$${product.price.toFixed(2)}`}
+                style={styles.input}
+              />
+              
+            </View>
+          </View>
+        ))}
+      </View>
+
+      {/* Diferencia de precio */}
+      <Text style={styles.differenceText}>Diferencia de precio:</Text>
+      <View style={styles.differenceBox}>
+        <Text style={styles.differenceValue}>${priceDifference.toFixed(2)}</Text>
+      </View>
+
+      {/* Resultado */}
+      {product1.price !== product2.price && (
+        <Text style={styles.resultText}>
+          {isProduct1Cheaper
+            ? `${product1.supermarket} es más barato`
+            : `${product2.supermarket} es más barato`}
+        </Text>
+      )}
+
+      <TouchableOpacity onPress={resetFields}>
+        <Text style={styles.resetText}>Reiniciar</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
+  container: { flex: 1, backgroundColor: '#ffff' },
+  headerContainer: {
+    backgroundColor: '#3F704D',
+    zIndex: 1,
   },
-  label: {
+  greenHeader: {
+    height: 220,
+    borderBottomLeftRadius: 100,
+    borderBottomRightRadius: 100,
+    backgroundColor: '#3F704D',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingLeft: 20,
+    zIndex: 1,
+  },
+  curvedBottom: {
+    backgroundColor: '#FFFFFF',
+    marginTop: -40,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    paddingTop: 40,
+    zIndex: 2,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 10,
+  },
+  backIcon: {
+    color: '#FFF',
+    fontSize: 28,
+  },
+  title: {
+    fontSize: 18,
     fontWeight: 'bold',
-    fontSize: 16,
+    color: '#FFF',
+    marginTop: 60,
+  },
+  inputsSection: {
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
+  compareButton: {
+    backgroundColor: '#3F704D',
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  compareText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  comparisonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 10,
     marginTop: 20,
   },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  addButtonText: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#2E7D32',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    borderRadius: 5,
-    marginBottom: 10,
-  },
-  icon: {
-    width: 40,
-    height: 40,
-    marginRight: 10,
-  },
+  column: { alignItems: 'center', width: '45%' },
   imageArrowContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 50,
+  icon: { width: 60, height: 60, borderRadius: 30 },
+  arrowIcon: {
+    marginTop: 4,
   },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  productItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  card: {
+    backgroundColor: '#e0e0e0',
+    borderRadius: 16,
     padding: 10,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    marginTop: 8,
     width: '100%',
   },
-  productImage: {
-    width: 40,
-    height: 40,
-    marginRight: 10,
+  label: { fontSize: 12, color: '#333' },
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 6,
+    padding: 6,
+    marginVertical: 4,
+    fontSize: 13,
+    color: '#000',
   },
-  productName: {
-    fontSize: 18,
+  differenceText: {
+    textAlign: 'center',
+    marginTop: 10,
+    fontSize: 14,
+    color: '#444',
   },
-  closeButton: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: '#2E7D32',
-    borderRadius: 5,
+  differenceBox: {
+    alignSelf: 'center',
+    marginTop: 6,
+    backgroundColor: '#d9d9d9',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 10,
   },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  differenceValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#222',
+  },
+  resultText: {
+    textAlign: 'center',
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3F704D',
+  },
+  resetText: {
+    textAlign: 'center',
+    marginTop: 10,
+    fontSize: 13,
+    color: '#888',
   },
 });
 
-export default ProductSelectionScreen;
+export default Comparacionprecios;
