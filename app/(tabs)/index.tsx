@@ -152,11 +152,18 @@ const HomeScreen: React.FC = () => {
             </View>
             </View>
 
-          {/* Botón "Crear lista" */}
-          <TouchableOpacity style={styles.createListButton} onPress={() => router.push('/new-list')}>
-          <Ionicons name="add-circle-outline" size={24} color="#2E7D32" />
-            <Text style={styles.createListButtonText}>Crear lista</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonsContainer}>
+            {/* Botón "Crear lista" */}
+            <TouchableOpacity style={styles.createListButton} onPress={() => router.push('/new-list')}>
+            <Ionicons name="add-circle-outline" size={24} color="#2E7D32" />
+              <Text style={styles.createListButtonText}>Crear lista</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.createListButton} onPress={() => router.push('/historialcompras')}>
+              <Ionicons name="time-outline" size={24} color="#2E7D32" />
+              <Text style={styles.createListButtonText}>Ver historial</Text>
+            </TouchableOpacity>
+          </View>
       </SafeAreaView>
     </>
   );
@@ -255,7 +262,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20, // Ajustar el lineHeight si es necesario
+    backgroundColor: '#fff',
+    paddingVertical: 1,
+    paddingHorizontal: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    flexDirection: 'row',
+    gap: 5,
   },
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20, // espacio entre los botones
+    paddingVertical: 20,
+  },
+  
 });
 
 export default HomeScreen;
