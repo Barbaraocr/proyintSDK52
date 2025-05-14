@@ -2,7 +2,7 @@
 import { User } from "@/models/User";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, UserCredential } from "firebase/auth"; // Asegúrate de importar signInWithEmailAndPassword
 import { setDoc, doc, getDoc } from "firebase/firestore";
-import { app,db } from "@/firebaseConfig";
+import { app, db } from "@/firebaseConfig";
 
 // Inicializa Firebase Authentication y Firestore usando la instancia de la app
 const auth = getAuth(app); // Usa la instancia de Firebase App

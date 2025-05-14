@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 15,
     color: '#FFF',
-    fontWeight: 'medium', // Cambiar a '500' para consistencia
+    //fontWeight: 'medium', // Cambiar a '500' para consistencia
     textAlign: 'center',
   },
   carouselContainer: {
