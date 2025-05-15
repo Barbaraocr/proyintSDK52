@@ -1,262 +1,226 @@
+// PantallaComparacion.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Button, Modal, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 
-const productExample = {
-  name: 'Lechuga',
-  category: 'Verduras',
-  supermarket: 'Super A',
-  price: 30.0,
-  icon: 'https://gallery.yopriceville.com/var/resizes/Free-Clipart-Pictures/Fruit-PNG/Plate_with_Fruits_PNG_Clipart_Image.png?m=1629831856',
-};
+interface Producto {
+  id: string;
+  name: string;
+  categoria: string;
+  supermercado: string;
+  precio: number;
+}
 
-const Comparacionprecios = () => {
-  const navigation = useNavigation();
-  const [input1, setInput1] = useState({ name: '', category: '', supermarket: '', price: '' });
-  const [input2, setInput2] = useState({ name: '', category: '', supermarket: '', price: '' });
+const productosDisponibles: Producto[] = [
+  { id: '1', name: 'Lechuga', categoria: 'Verduras', supermercado: 'Super A', precio: 30 },
+  { id: '2', name: 'Lechuga', categoria: 'Verduras', supermercado: 'Super A', precio: 35 },
+  { id: '3', name: 'Tomate', categoria: 'Verduras', supermercado: 'Super B', precio: 25 },
+  { id: '4', name: 'Tomate', categoria: 'Verduras', supermercado: 'Super C', precio: 28 },
+];
 
-  const [product1, setProduct1] = useState(productExample);
-  const [product2, setProduct2] = useState({ ...productExample, price: 35.0 });
+export default function PantallaComparacion() {
+  const [producto1, setProducto1] = useState<Producto | null>(null);
+  const [producto2, setProducto2] = useState<Producto | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [seleccionandoProducto, setSeleccionandoProducto] = useState<1 | 2 | null>(null);
+  const [comparado, setComparado] = useState(false);
 
-  const priceDifference = Math.abs(product1.price - product2.price);
-  const isProduct1Cheaper = product1.price < product2.price;
-
-  const handleCompare = () => {
-    if (
-      input1.name && input1.category && input1.supermarket && input1.price &&
-      input2.name && input2.category && input2.supermarket && input2.price
-    ) {
-      setProduct1({ ...input1, price: parseFloat(input1.price), icon: productExample.icon });
-      setProduct2({ ...input2, price: parseFloat(input2.price), icon: productExample.icon });
+  const seleccionarProducto = (producto: Producto) => {
+    if (seleccionandoProducto === 1) {
+      setProducto1(producto);
+    } else if (seleccionandoProducto === 2) {
+      setProducto2(producto);
     }
+    setModalVisible(false);
   };
 
-  const resetFields = () => {
-    setInput1({ name: '', category: '', supermarket: '', price: '' });
-    setInput2({ name: '', category: '', supermarket: '', price: '' });
-    setProduct1(productExample);
-    setProduct2({ ...productExample, price: 35.0 });
+  // Indica cuál producto es más barato para la comparación de flechas
+  const isProduct1Cheaper = producto1 && producto2 ? producto1.precio < producto2.precio : false;
+
+  const renderProductoCard = (producto: Producto | null, lado: 1 | 2) => {
+    const otroProducto = lado === 1 ? producto2 : producto1;
+    const mostrarFlecha = comparado && producto && otroProducto;
+    let iconName: 'arrowdown' | 'arrowup' | null = null;
+    let iconColor = 'green';
+
+    if (mostrarFlecha) {
+      if (producto.precio < otroProducto.precio) {
+        iconName = 'arrowdown';
+        iconColor = 'green';
+      } else if (producto.precio > otroProducto.precio) {
+        iconName = 'arrowup';
+        iconColor = 'red';
+      } else {
+        iconName = null; // Precios iguales, sin flecha
+      }
+    }
+
+    return (
+      <View style={styles.card}>
+        <Text style={styles.etiqueta}>Nombre:</Text>
+        <Text style={styles.valor}>{producto?.name ?? ''}</Text>
+        <Text style={styles.etiqueta}>Categoría:</Text>
+        <Text style={styles.valor}>{producto?.categoria ?? ''}</Text>
+        <Text style={styles.etiqueta}>Supermercado:</Text>
+        <Text style={styles.valor}>{producto?.supermercado ?? ''}</Text>
+        <Text style={styles.etiqueta}>Precio:</Text>
+        <View style={styles.precioContainer}>
+          <Text style={styles.valor}>
+            {producto ? `$${producto.precio.toFixed(2)}` : ''}
+          </Text>
+          {iconName && (
+            <AntDesign
+              name={iconName}
+              size={24}
+              color={iconColor}
+              style={styles.arrowIcon}
+            />
+          )}
+        </View>
+        <Button
+          title="Seleccionar producto"
+          onPress={() => {
+            setSeleccionandoProducto(lado);
+            setModalVisible(true);
+            setComparado(false); // Reinicia comparación si se cambia producto
+          }}
+        />
+      </View>
+    );
+  };
+
+  const renderComparacion = () => {
+    if (!comparado || !producto1 || !producto2) return null;
+
+    const diferencia = Math.abs(producto1.precio - producto2.precio).toFixed(2);
+    const masBarato =
+      producto1.precio < producto2.precio
+        ? producto1.supermercado
+        : producto2.supermercado;
+
+    return (
+      <View style={styles.comparacionContainer}>
+        <Text style={styles.etiqueta}>Diferencia de precio:</Text>
+        <View style={styles.diferencia}>
+          <Text style={styles.diferenciaTexto}>${diferencia}</Text>
+        </View>
+        <Text style={styles.resultadoTexto}>
+          {`${masBarato} es más barato`}
+        </Text>
+      </View>
+    );
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 20 }}>
-      {/* Header */}
-      <View style={styles.headerContainer}>
-        <View style={styles.greenHeader}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Comparador de precios</Text>
+    <View style={styles.container}>
+      <Text style={styles.titulo}>Comparar Productos</Text>
+
+      <View style={styles.productosContainer}>
+        {renderProductoCard(producto1, 1)}
+        {renderProductoCard(producto2, 2)}
+      </View>
+
+      {renderComparacion()}
+
+      <Modal visible={modalVisible} animationType="slide">
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitulo}>Seleccionar Producto</Text>
+          <FlatList
+            data={productosDisponibles}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.itemProducto}
+                onPress={() => seleccionarProducto(item)}
+              >
+                <Text>{item.name} - {item.supermercado} - ${item.precio}</Text>
+              </TouchableOpacity>
+            )}
+          />
+          <Button title="Cerrar" onPress={() => setModalVisible(false)} />
         </View>
-        <View style={styles.curvedBottom} />
-      </View>
+      </Modal>
 
-      
-      {/* Entradas de usuario */}
-      <View style={styles.inputsSection}>
-        <Text style={styles.label}>Producto 1:</Text>
-        <TextInput placeholder="Nombre" value={input1.name} onChangeText={(text) => setInput1({ ...input1, name: text })} style={styles.input} />
-        <TextInput placeholder="Categoría" value={input1.category} onChangeText={(text) => setInput1({ ...input1, category: text })} style={styles.input} />
-        <TextInput placeholder="Supermercado" value={input1.supermarket} onChangeText={(text) => setInput1({ ...input1, supermarket: text })} style={styles.input} />
-        <TextInput placeholder="Precio" value={input1.price} keyboardType="numeric" onChangeText={(text) => setInput1({ ...input1, price: text })} style={styles.input} />
-
-        <Text style={styles.label}>Producto 2:</Text>
-        <TextInput placeholder="Nombre" value={input2.name} onChangeText={(text) => setInput2({ ...input2, name: text })} style={styles.input} />
-        <TextInput placeholder="Categoría" value={input2.category} onChangeText={(text) => setInput2({ ...input2, category: text })} style={styles.input} />
-        <TextInput placeholder="Supermercado" value={input2.supermarket} onChangeText={(text) => setInput2({ ...input2, supermarket: text })} style={styles.input} />
-        <TextInput placeholder="Precio" value={input2.price} keyboardType="numeric" onChangeText={(text) => setInput2({ ...input2, price: text })} style={styles.input} />
-
-        <TouchableOpacity onPress={handleCompare} style={styles.compareButton}>
-          <Text style={styles.compareText}>Comparar</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Resultados de comparación */}
-      <View style={styles.comparisonRow}>
-        {[product1, product2].map((product, index) => (
-          <View style={styles.column} key={index}>
-            <View style={styles.imageArrowContainer}>
-              <Image source={{ uri: product.icon }} style={styles.icon} />
-              <AntDesign
-                name={
-                  (index === 0 && isProduct1Cheaper) || (index === 1 && !isProduct1Cheaper)
-                    ? 'arrowdown'
-                    : 'arrowup'
-                }
-                size={24}
-                color={
-                  (index === 0 && isProduct1Cheaper) || (index === 1 && !isProduct1Cheaper)
-                    ? 'green'
-                    : 'red'
-                }
-                style={styles.arrowIcon}
-              />
-            </View>
-
-            <Text style={styles.label}>Producto</Text>
-            <View style={styles.card}>
-              <Text style={styles.label}>Nombre:</Text>
-              <TextInput editable={false} value={product.name} style={styles.input} />
-
-              <Text style={styles.label}>Categoría:</Text>
-              <TextInput editable={false} value={product.category} style={styles.input} />
-
-              <Text style={styles.label}>Supermercado:</Text>
-              <TextInput editable={false} value={product.supermarket} style={styles.input} />
-
-              <Text style={styles.label}>Precio:</Text>
-              <TextInput
-                editable={false}
-                value={`$${product.price.toFixed(2)}`}
-                style={styles.input}
-              />
-              
-            </View>
-          </View>
-        ))}
-      </View>
-
-      {/* Diferencia de precio */}
-      <Text style={styles.differenceText}>Diferencia de precio:</Text>
-      <View style={styles.differenceBox}>
-        <Text style={styles.differenceValue}>${priceDifference.toFixed(2)}</Text>
-      </View>
-
-      {/* Resultado */}
-      {product1.price !== product2.price && (
-        <Text style={styles.resultText}>
-          {isProduct1Cheaper
-            ? `${product1.supermarket} es más barato`
-            : `${product2.supermarket} es más barato`}
-        </Text>
-      )}
-
-      <TouchableOpacity onPress={resetFields}>
-        <Text style={styles.resetText}>Reiniciar</Text>
+      <TouchableOpacity
+        style={[
+          styles.botonComparar,
+          !(producto1 && producto2) && { backgroundColor: '#ccc' },
+        ]}
+        disabled={!(producto1 && producto2)}
+        onPress={() => setComparado(true)}
+      >
+        <Text style={styles.botonTexto}>Comparar</Text>
       </TouchableOpacity>
-    </ScrollView>
+
+      <TouchableOpacity
+        style={[styles.botonComparar, { backgroundColor: '#555', marginTop: 10 }]}
+        onPress={() => {
+          setProducto1(null);
+          setProducto2(null);
+          setComparado(false);
+          setSeleccionandoProducto(null);
+        }}
+      >
+        <Text style={styles.botonTexto}>Reiniciar</Text>
+      </TouchableOpacity>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffff' },
-  headerContainer: {
-    backgroundColor: '#3F704D',
-    zIndex: 1,
-  },
-  greenHeader: {
-    height: 220,
-    borderBottomLeftRadius: 100,
-    borderBottomRightRadius: 100,
-    backgroundColor: '#3F704D',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    paddingLeft: 20,
-    zIndex: 1,
-  },
-  curvedBottom: {
-    backgroundColor: '#FFFFFF',
-    marginTop: -40,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    paddingTop: 40,
-    zIndex: 2,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 10,
-  },
-  backIcon: {
-    color: '#FFF',
-    fontSize: 28,
-  },
-  title: {
-    fontSize: 18,
+  container: { flex: 1, padding: 20 },
+  titulo: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFF',
-    marginTop: 60,
+    marginBottom: 10,
+    alignSelf: 'center',
   },
-  inputsSection: {
-    paddingHorizontal: 20,
-    marginTop: 10,
-  },
-  compareButton: {
-    backgroundColor: '#3F704D',
-    padding: 10,
-    borderRadius: 10,
-    marginTop: 10,
-  },
-  compareText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  comparisonRow: {
+  productosContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 10,
-    marginTop: 20,
-  },
-  column: { alignItems: 'center', width: '45%' },
-  imageArrowContainer: {
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  icon: { width: 60, height: 60, borderRadius: 30 },
-  arrowIcon: {
-    marginTop: 4,
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
   card: {
-    backgroundColor: '#e0e0e0',
-    borderRadius: 16,
+    width: '48%',
+    backgroundColor: '#eee',
     padding: 10,
-    marginTop: 8,
-    width: '100%',
-  },
-  label: { fontSize: 12, color: '#333' },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 6,
-    padding: 6,
-    marginVertical: 4,
-    fontSize: 13,
-    color: '#000',
-  },
-  differenceText: {
-    textAlign: 'center',
-    marginTop: 10,
-    fontSize: 14,
-    color: '#444',
-  },
-  differenceBox: {
-    alignSelf: 'center',
-    marginTop: 6,
-    backgroundColor: '#d9d9d9',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
     borderRadius: 10,
   },
-  differenceValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#222',
+  etiqueta: { fontWeight: '600', marginTop: 5 },
+  valor: { backgroundColor: '#fff', padding: 5, borderRadius: 5 },
+  precioContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
-  resultText: {
-    textAlign: 'center',
-    marginTop: 10,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3F704D',
+  arrowIcon: {
+    marginLeft: 5,
   },
-  resetText: {
-    textAlign: 'center',
-    marginTop: 10,
-    fontSize: 13,
-    color: '#888',
+  comparacionContainer: { alignItems: 'center', marginBottom: 20 },
+  diferencia: {
+    backgroundColor: '#ddd',
+    padding: 8,
+    borderRadius: 10,
+    marginVertical: 10,
+  },
+  diferenciaTexto: { fontWeight: 'bold' },
+  resultadoTexto: { color: 'green', fontWeight: 'bold', fontSize: 16 },
+  botonComparar: {
+    backgroundColor: '#3b704c',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  botonTexto: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  modalContainer: { flex: 1, padding: 20 },
+  modalTitulo: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  itemProducto: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
 });
-
-export default Comparacionprecios;
