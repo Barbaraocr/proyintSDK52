@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-const router = useRouter();
 
 interface ProductDetails {
     name: string;

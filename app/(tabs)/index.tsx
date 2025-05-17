@@ -1,19 +1,10 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  Image,
-  TextInput,
-  StyleSheet,
-  FlatList,
-  Dimensions,
-  SafeAreaView,
-  StatusBar,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, Image, TextInput, StyleSheet, FlatList, Dimensions, SafeAreaView, StatusBar, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { auth } from "@/firebaseConfig";
+import { onAuthStateChanged } from 'firebase/auth'; // Añade esta importación
 import { getUserIdFromSession } from "../../services/auth";
+
 import { getIndividualListsByUserId, getCollaborativeListsByUserId, getRandomIconUrl } from "../../services/lists";
 import { List } from "../../models/Lists";
 import Ionicons from "@expo/vector-icons/Ionicons";
