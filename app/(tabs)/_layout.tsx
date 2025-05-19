@@ -6,14 +6,14 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+    const colorScheme = useColorScheme();
 
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-      }}>
+    return (
+        <Tabs
+            screenOptions={{
+                tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+                headerShown: false,
+            }}>
       <Tabs.Screen
         name="index"
         options={{
@@ -123,6 +123,15 @@ export default function TabLayout() {
           ),
         }}
       />
+            <Tabs.Screen
+                name="notificaciones"
+                options={{
+                    title: 'Notificaciones',
+                    tabBarIcon: ({ color, focused }) => (
+                        <TabBarIcon name={focused ? 'notifications' : 'notifications-outline'} color={color} />
+                    ),
+                }}
+            />
 
     </Tabs>
 
