@@ -70,7 +70,7 @@ const ProgramarNotificacion = () => {
             await AsyncStorage.setItem('scheduledNotifications', JSON.stringify(updatedNotifications));
 
             alert(`Notificación programada para el ${selectedDate} a las ${selectedTime.toLocaleTimeString()}.`);
-            router.back(); // Volver a la pantalla de notificaciones
+            router.navigate('/notificaciones');
         } catch (error) {
             console.error('Error al programar la notificación:', error);
             alert('Hubo un error al programar la notificación.');

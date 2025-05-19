@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,9 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth } from "@/firebaseConfig";
-import { getUserIdFromSession } from "../../services/auth";
-import { getIndividualListsByUserId, getCollaborativeListsByUserId, getRandomIconUrl } from "../../services/lists";
-import { List } from "../../models/Lists";
+import { getUserIdFromSession } from "@/services/auth";
+import { getIndividualListsByUserId, getCollaborativeListsByUserId, getRandomIconUrl } from "@/services/lists";
+import { List } from "@/models/Lists";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 const { width } = Dimensions.get("window");
@@ -52,7 +52,7 @@ const HomeScreen: React.FC = () => {
   // Obtener íconos aleatorios para cada lista
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user: import('firebase/auth').User | null) => {
       if (user) {
         const userId = await getUserIdFromSession();
         if (userId) {
