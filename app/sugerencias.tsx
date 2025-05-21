@@ -1,56 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { CheckBox } from 'react-native-elements';
 import { useNavigation } from '@react-navigation/native';
-
-const suggestions = [
-  { id: '1', image: require('../assets/product.png'), selected: true },
-  { id: '2', image: require('../assets/product.png'), selected: true },
-  { id: '3', image: require('../assets/product.png'), selected: true },
-  { id: '4', image: require('../assets/product.png'), selected: false },
-  { id: '5', image: require('../assets/product.png'), selected: false },
-];
-
-const tryProducts = [
-  { id: '6', image: require('../assets/product.png'), selected: false },
-  { id: '7', image: require('../assets/product.png'), selected: false },
-  { id: '8', image: require('../assets/product.png'), selected: false },
-  { id: '9', image: require('../assets/product.png'), selected: false },
-  { id: '10', image: require('../assets/product.png'), selected: false },
-  { id: '11', image: require('../assets/product.png'), selected: false },
-  { id: '12', image: require('../assets/product.png'), selected: false },
-  { id: '13', image: require('../assets/product.png'), selected: false },
-];
+import { getSuggestedProductsByRecentCategories } from '../services/Products';
+import { Producto } from '../models/Products';
+import { getAuth } from 'firebase/auth';
 
 export default function SuggestedScreen() {
   const navigation = useNavigation();
-  const [selectedSuggestions, setSelectedSuggestions] = useState(suggestions);
-  const [selectedTries, setSelectedTries] = useState(tryProducts);
+  const [suggestedProducts, setSuggestedProducts] = useState<Producto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSuggestions, setSelectedSuggestions] = useState<{ [key: string]: boolean }>({});
 
-  const toggleCheck = (id: string, listType: 'suggestions' | 'tries') => {
-    const list = listType === 'suggestions' ? selectedSuggestions : selectedTries;
-    const updatedList = list.map((item) =>
-      item.id === id ? { ...item, selected: !item.selected } : item
-    );
-    listType === 'suggestions' ? setSelectedSuggestions(updatedList) : setSelectedTries(updatedList);
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      try {
+        const user = getAuth().currentUser;
+        if (!user) return;
+
+        const products = await getSuggestedProductsByRecentCategories(user.uid);
+        setSuggestedProducts(products);
+        const initialSelection = Object.fromEntries(products.map(p => [p.id!, true]));
+        setSelectedSuggestions(initialSelection);
+      } catch (error) {
+        console.error('Error fetching suggested products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, []);
+
+  const toggleCheck = (id: string) => {
+    setSelectedSuggestions(prev => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
-  const renderProduct = ({ item }: any, listType: 'suggestions' | 'tries') => (
+  const renderProduct = ({ item }: { item: Producto }) => (
     <View style={styles.productContainer}>
-      <Image source={item.image} style={styles.productImage} />
-      <Text style={styles.productText}>Producto</Text>
+      <Image
+        source={item.imagenURL ? { uri: item.imagenURL } : require('../assets/product.png')}
+        style={styles.productImage}
+      />
+      <Text style={styles.productText}>{item.nombre}</Text>
       <CheckBox
-        checked={item.selected}
-        onPress={() => toggleCheck(item.id, listType)}
+        checked={!!selectedSuggestions[item.id!]}
+        onPress={() => toggleCheck(item.id!)}
         containerStyle={{ backgroundColor: 'transparent', borderWidth: 0, padding: 0 }}
-        style={{ alignSelf: 'center' }}
       />
     </View>
   );
 
   return (
     <View style={styles.fullContainer}>
-      {/* Parte verde superior curva */}
       <View style={styles.greenHeader}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backIcon}>←</Text>
@@ -60,30 +65,22 @@ export default function SuggestedScreen() {
       <View style={styles.container}>
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Sugerencias para ti</Text>
-          <FlatList
-            data={selectedSuggestions}
-            horizontal
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => renderProduct({ item }, 'suggestions')}
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Tal vez quieras probar</Text>
-          <FlatList
-            data={selectedTries}
-            numColumns={4}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => renderProduct({ item }, 'tries')}
-            contentContainerStyle={styles.tryList}
-          />
+          {loading ? (
+            <ActivityIndicator size="large" color="#00a680" />
+          ) : (
+            <FlatList
+              data={suggestedProducts}
+              horizontal
+              keyExtractor={(item) => item.id!}
+              renderItem={renderProduct}
+              showsHorizontalScrollIndicator={false}
+            />
+          )}
         </View>
       </View>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   fullContainer: {
     flex: 1,
