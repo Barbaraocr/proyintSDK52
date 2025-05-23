@@ -22,7 +22,7 @@ import { ProductoLista } from '@/models/ProductsList';
 import { getPurchaseHistoryByFilters, getPurchaseHistoryByDateRange, createPurchaseHistory } from '@/services/purchasehistory';
 import { PurchaseHistory } from '@/models/PurchaseHistory';
 import { getUserIdFromSession } from '@/services/auth';
-
+import { deleteProductoFromList } from '@/services/Products'; 
 export default function ListScreen(){
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -44,6 +44,44 @@ export default function ListScreen(){
     } finally {
     }
   };
+  const handleDeleteProduct = async (productoListaId: string) => {
+    try {
+      await deleteProductoFromList(productoListaId);
+      Alert.alert('Producto eliminado', 'El producto fue eliminado de la lista correctamente.');
+      // Actualiza la lista refrescando los productos
+      if (id && typeof id === 'string') {
+        fetchProductInList(id);
+      }
+    } catch (error) {
+      console.error('Error eliminando producto:', error);
+      Alert.alert('Error', 'No se pudo eliminar el producto. Inténtalo de nuevo.');
+    }
+  };
+  const handleAddProductFromCatalog = async (product: Producto) => {
+    try {
+      const productoLista = new ProductoLista(
+        undefined,
+        product.id || null,
+        1,
+        selectedList?.id || null,
+        false,
+        null,
+        new Date()
+      );
+  
+      await addProductoToList(productoLista, 1);
+      Alert.alert('Éxito', '¡Producto agregado a la lista!');
+      setModalVisible(false); // Cierra el modal
+  
+      if (id && typeof id === 'string') {
+        fetchProductInList(id); // Refresca los productos
+      }
+    } catch (error) {
+      console.error('Error al agregar producto desde el catálogo:', error);
+      Alert.alert('Error', 'Hubo un problema al agregar el producto. Inténtalo de nuevo.');
+    }
+  };
+  
   
   useEffect(() => {
     if (id && typeof id === 'string') {
@@ -413,6 +451,16 @@ export default function ListScreen(){
               >
                 <Text style={styles.buyButtonText}>Comprar</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.buyButton, { backgroundColor: '#E53935', marginLeft: 10 }]}
+                onPress={() => {
+                  if (item.id) {
+                    handleDeleteProduct(item.id);
+                  }
+                }}
+              >
+                <Ionicons name="trash" size={20} color="white" />
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -463,57 +511,71 @@ export default function ListScreen(){
         <Text style={styles.addButtonText}>Agregar producto</Text>
       </TouchableOpacity>
 
-      {/* Modal */}
       <Modal visible={isModalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Catálogo de productos</Text>
-            <ScrollView contentContainerStyle={styles.productsGrid}>
-              {catalogProducts.map((product) => (
-                <TouchableOpacity
-                  key={product.id}
-                  style={styles.productItem}
-                  onPress={() => {
-                    const productoLista = new ProductoLista(
-                      undefined, // ID opcional
-                      product.id || null, // Referencia al ID del Producto
-                      1, // Cantidad inicial
-                      selectedList?.id || null, // ID de la lista desde useLocalSearchParams
-                      false, // Inicializa como no comprado
-                      null, // Usuario asignado, opcional
-                      new Date() // Fecha de creación/actualización
-                    );
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Catálogo de productos</Text>
+      <ScrollView contentContainerStyle={styles.productsGrid}>
+        {catalogProducts.map((product) => (
+          <TouchableOpacity
+            key={product.id}
+            style={styles.productItem}
+            onPress={async () => {
+              try {
+                const productoLista = new ProductoLista(
+                  undefined,
+                  product.id || null,
+                  1,
+                  selectedList?.id || null,
+                  false,
+                  null,
+                  new Date()
+                );
 
-                    // Llama a la función con el nuevo objeto ProductoLista
-                    addProductoToList(productoLista, 1);
-                    console.log("added product to list:")
-                    console.log(productoLista)
-                  }}
-                >
-                  <Image source={{ uri: product.imagenURL || 'https://via.placeholder.com/150' }} style={styles.productImage} />
-                  <Text style={styles.productName}>{product.nombre}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity
-              style={styles.newProductButton}
-              onPress={() => {
-                setModalVisible(false);
-                router.push('/nuevoagregarproducto');
-              }}
-            >
-              <MaterialIcons name="add-circle-outline" size={48} color="#2E7D32" />
-              <Text style={styles.newProductText}>Nuevo producto</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Cerrar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+                await addProductoToList(productoLista, 1);
+                Alert.alert('Éxito', '¡Producto agregado a la lista!');
+                setModalVisible(false); // Cierra el modal
+
+                // Refrescar la lista si hay un id válido
+                if (id && typeof id === 'string') {
+                  fetchProductInList(id);
+                }
+              } catch (error) {
+                console.error('Error al agregar producto del catálogo:', error);
+                Alert.alert('Error', 'No se pudo agregar el producto. Intenta de nuevo.');
+              }
+            }}
+          >
+            <Image
+              source={{ uri: product.imagenURL || 'https://via.placeholder.com/150' }}
+              style={styles.productImage}
+            />
+            <Text style={styles.productName}>{product.nombre}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <TouchableOpacity
+        style={styles.newProductButton}
+        onPress={() => {
+          setModalVisible(false);
+          router.push('/nuevoagregarproducto');
+        }}
+      >
+        <MaterialIcons name="add-circle-outline" size={48} color="#2E7D32" />
+        <Text style={styles.newProductText}>Nuevo producto</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={() => setModalVisible(false)}
+      >
+        <Text style={styles.closeButtonText}>Cerrar</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
     </View>
   );
 };

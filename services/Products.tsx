@@ -99,3 +99,4 @@ export async function markProductoAsComprado(productoListaId: string): Promise<v
 export async function deleteProductoFromList(productoListaId: string): Promise<void> {
   await deleteDoc(doc(db, "ProductosListas", productoListaId));
 }
+
