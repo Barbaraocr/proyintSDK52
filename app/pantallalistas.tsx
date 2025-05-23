@@ -152,18 +152,18 @@ export default function ListScreen(){
   };
   
   const getGroupedProducts = () => {
-    const groupedByName: { [key: string]: DetailedProduct[] } = {};
+    const groupedByCategory: { [key: string]: DetailedProduct[] } = {};
   
     detailedProducts.forEach(product => {
-      const name = product.productoOriginal?.nombre || 'Sin nombre'; // Cambiar esta linea cuando se agregen los departamentos para agrupar por departamentos
-      if (!groupedByName[name]) {
-        groupedByName[name] = [];
+      const categoria = product.productoOriginal?.categoria || 'Sin categoría'; // Agrupar por categoría
+      if (!groupedByCategory[categoria]) {
+        groupedByCategory[categoria] = [];
       }
-      groupedByName[name].push(product);
+      groupedByCategory[categoria].push(product);
     });
   
-    return Object.entries(groupedByName).map(([name, items]) => ({
-      nombre: name,
+    return Object.entries(groupedByCategory).map(([categoria, items]) => ({
+      categoria,
       cantidad: items.length,
       productos: items,
     }));
@@ -346,10 +346,10 @@ export default function ListScreen(){
       {grouped ? (
       <FlatList
         data={getGroupedProducts()}
-        keyExtractor={(item) => item.nombre}
+        keyExtractor={(item) => item.categoria}
         renderItem={({ item }) => (
           <View style={styles.groupContainer}>
-            <Text style={styles.groupTitle}>{item.nombre} ({item.cantidad})</Text>
+            <Text style={styles.groupTitle}>{item.categoria} ({item.cantidad})</Text>
             {item.productos.map(producto => (
               <View key={producto.id} style={styles.productContainer}>
                 <Image
@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
   },
   totalsContainer: {
     backgroundColor: '#fff',
-    padding: 10,
+    padding: 5,
     borderRadius: 10,
     marginVertical: 10,
   },
@@ -761,8 +761,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   suggestionImage: {
-    width: 80,
-    height: 80,
+    width: 20,
+    height: 20,
     borderRadius: 5,
     marginBottom: 8,
   },
