@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router, SearchParams, useLocalSearchParams } from 'expo-router';
-import { getProductoById } from '@/services/Products';
-
-
-
+import { getProductoById, modifyProducto } from '@/services/Products';
 
 const EditProductScreen: React.FC = () => {
   const { id } = useLocalSearchParams();
@@ -28,6 +25,7 @@ const EditProductScreen: React.FC = () => {
             setName(fetchedProduct.nombre || ''); // Asigna un valor válido
             setCategory(fetchedProduct.categoria || ''); // Asigna un valor válido
             setPrice(fetchedProduct.precio ? String(fetchedProduct.precio) : '');
+            setSupermarket(fetchedProduct.supermercado ? String(fetchedProduct.supermercado) : '');
           } else {
             console.log('Producto no encontrado');
           }
@@ -41,12 +39,25 @@ const EditProductScreen: React.FC = () => {
     fetchProduct();
   }, [id]);
 
-  const handleSave = () => {
-  
-    console.log("Producto actualizado:", { name, category, supermarket, price });
-    console.log('Cambios guardados');
+  const handleSave = async () => {
+  if (!idString) return;
 
-  };
+  try {
+    await modifyProducto(idString, {
+      nombre: name,
+      categoria: category,
+      supermercado: supermarket,
+      precio: parseFloat(price),
+    });
+
+    console.log("Producto actualizado:", { name, category, supermarket, price });
+    alert("Cambios guardados correctamente");
+    router.back(); // Opcional: vuelve a la pantalla anterior
+  } catch (error) {
+    console.error("Error al actualizar el producto:", error);
+    alert("Error al guardar los cambios");
+  }
+};
 
   if (!product) {
     return <Text>Cargando información del producto...</Text>;

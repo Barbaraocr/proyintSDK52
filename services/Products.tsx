@@ -5,9 +5,9 @@ import { ProductoLista } from "../models/ProductsList";
 import { Producto } from "../models/Products";
 import { getPurchaseHistoryByUserId } from "./purchasehistory";
 
-export async function addProducto(nombre: string, category: string, imagenURL: string, price: number): Promise<void> {
+export async function addProducto(nombre: string, category: string, imagenURL: string, price: number,supermarket: string): Promise<void> {
   // Crear una nueva instancia de Producto
-  const producto = new Producto(null,nombre, category, price, imagenURL);
+  const producto = new Producto(null,nombre, category, price, imagenURL, supermarket);
 
   // Generar un ID único para el producto
   const productoId = doc(collection(db, "productos")).id;
