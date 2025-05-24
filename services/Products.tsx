@@ -64,6 +64,7 @@ export async function getProductosByCategory(categoryName: string): Promise<Prod
 }
 
 
+
 export async function getSuggestedProductsByRecentCategories(userId: string): Promise<Producto[]> {
   const history = await getPurchaseHistoryByUserId(userId);
 
@@ -98,6 +99,7 @@ export async function getSuggestedProductsByRecentCategories(userId: string): Pr
 
   return suggested;
 }
+
 
 // Obtener productos en una lista específica
 export async function getProductosByListId(listaId: string): Promise<ProductoLista[]> {
@@ -136,3 +138,4 @@ export async function markProductoAsComprado(productoListaId: string): Promise<v
 export async function deleteProductoFromList(productoListaId: string): Promise<void> {
   await deleteDoc(doc(db, "ProductosListas", productoListaId));
 }
+
