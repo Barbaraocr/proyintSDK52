@@ -87,7 +87,7 @@ const EditProductScreen: React.FC = () => {
 >
   <Ionicons name="arrow-back" size={24} color="#256847" />
   <Text style={styles.backButtonText}>Regresar</Text>
-</TouchableOpacity>
+</TouchableOpacity></View>
 <Text style={styles.title}>Editar producto</Text>
 <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
 

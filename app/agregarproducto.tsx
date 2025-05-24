@@ -27,7 +27,7 @@ const IconSelectionScreen: React.FC = () => {
 
   const handleAddProduct = async () => {
     console.log('Product Info:', { productName, productimageURL, price, selectedIcon, supermarket });
-  const router = useRouter();
+  
     if (!productName || !selectedIcon || !productimageURL || !price || !supermarket) {
       Alert.alert('Error', 'Faltan datos. Por favor, completa todos los campos antes de agregar el producto.');
       return;
