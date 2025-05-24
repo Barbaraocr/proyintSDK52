@@ -69,8 +69,8 @@ const ProgramarNotificacion = () => {
             alert(`Notificación programada para el ${selectedDate} a las ${selectedTime.toLocaleTimeString()}.`);
             router.navigate('/notificaciones');
         } catch (error) {
-            console.error('Error al programar la notificación:', error);
-            alert('Hubo un error al programar la notificación.\n' + (error as Error).message);;
+            console.error('Error al programar la notificación:');
+            alert('Hubo un error al programar la notificación.');
         }
     };
 
