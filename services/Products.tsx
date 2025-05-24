@@ -101,6 +101,7 @@ export async function getSuggestedProductsByRecentCategories(userId: string): Pr
 }
 
 
+
 // Obtener productos en una lista específica
 export async function getProductosByListId(listaId: string): Promise<ProductoLista[]> {
   const ProductosListasQuery = query(collection(db, "ProductosListas"), where("listaId", "==", listaId));

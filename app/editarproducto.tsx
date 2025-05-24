@@ -1,11 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router, SearchParams, useLocalSearchParams } from 'expo-router';
-import { getProductoById, modifyProducto } from '@/services/Products';
+import { deleteProducto, getProductoById, modifyProducto } from '@/services/Products';
 import { Ionicons } from '@expo/vector-icons';
+
 
 const EditProductScreen: React.FC = () => {
   const { id } = useLocalSearchParams();
+  const handleDelete = async () => {
+  if (!idString) return;
+
+  try {
+    await deleteProducto(idString);
+    alert("Producto eliminado correctamente");
+    router.back(); // Vuelve a la pantalla anterior
+  } catch (error) {
+    console.error("Error al eliminar el producto:", error);
+    alert("Error al eliminar el producto");
+  }
+};
 
   const [product, setProduct] = useState<any>(null); 
   const [name, setName] = useState('');
@@ -68,19 +81,19 @@ const EditProductScreen: React.FC = () => {
     <ScrollView contentContainerStyle={styles.container}>
       
       <View style={styles.header}>
-  <TouchableOpacity
-    style={styles.backButton}
-    onPress={() => router.navigate('/misproductos')}
-  >
-    <Ionicons name="arrow-back" size={24} color="#256847" />
-    <Text style={styles.backButtonText}>Regresar</Text>
-  </TouchableOpacity>
-</View>
+<TouchableOpacity
+  style={styles.backButton}
+  onPress={() => router.navigate('/misproductos')}
+>
+  <Ionicons name="arrow-back" size={24} color="#256847" />
+  <Text style={styles.backButtonText}>Regresar</Text>
+</TouchableOpacity>
+<Text style={styles.title}>Editar producto</Text>
+<TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
 
-      <Text style={styles.title}>Editar producto</Text>
-      <TouchableOpacity style={styles.deleteButton}>
         <Text style={styles.deleteButtonText}>Eliminar producto</Text>
       </TouchableOpacity>
+
 
       {/* Formulario para editar el producto */}
       <View style={styles.formContainer}>
