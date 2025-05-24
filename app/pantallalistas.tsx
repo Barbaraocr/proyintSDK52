@@ -328,16 +328,7 @@ export default function ListScreen(){
     <Text style={{ marginLeft: 8, color: '#256847', fontWeight: 'bold' }}>Inicio</Text>
   </TouchableOpacity>
       
-      <TouchableOpacity style={styles.menuIcon} onPress={() => {
-          if (selectedList?.id) {
-            navigationToEditingOptions(selectedList.id);
-          } else {
-            console.error("selectedList o su ID no están definidos");
-          }
-        }}>
-        <MaterialIcons name="edit" size={24} color="#333" />
-      </TouchableOpacity>
-
+      
       {/* Menú lateral */}
       {isMenuOpen && (
         <View style={styles.menuContainer}>
