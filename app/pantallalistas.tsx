@@ -228,7 +228,9 @@ export default function ListScreen(){
         ...prevState,
         [id]: !prevState[id], // Toggle selection for the specific product
       }));
-      
+      if (id && typeof id === 'string') {
+        fetchProductInList(id); // Refresca los productos
+      }
       // Update the 'isComprado' field for the corresponding product
       // Now call the API to update the product's purchase status in the backend
       await markProductoAsComprado(id);
@@ -344,7 +346,7 @@ export default function ListScreen(){
 
       {/* Título */}
       <View style={styles.titlecontainer}>
-        <Text style={styles.title}>Nombre de la lista</Text>
+        <Text style={styles.title}>{selectedList?.listName}</Text>
         <TouchableOpacity onPress={() => {
           if (selectedList?.id) {
             navigationToSharingOptions(selectedList.id);
@@ -498,11 +500,11 @@ export default function ListScreen(){
 
       {/* Montos */}
       <View style={styles.totalsContainer}>
-        <Text style={styles.totalText}>Monto total de la lista: $0.00</Text>
+        
         <Text style={styles.totalText}>
           Monto total de artículos seleccionados: ${totalSelected.toFixed(2)}
         </Text>
-        <Text style={styles.totalText}>Presupuesto: $0.00</Text>
+        <Text style={styles.totalText}>Presupuesto: {selectedList?.budget}</Text>
       </View>
 
       {/* Botón para abrir el popup */}

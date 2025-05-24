@@ -184,3 +184,20 @@ export async function getRandomIconUrl(): Promise<string | null> {
     return null;
   }
 }
+export const getUsersInListmail = async (listId: string): Promise<string[]> => {
+  const listDoc = await getDoc(doc(db, "listas", listId));
+  const listData = listDoc.data();
+
+  if (!listData?.usersInList) return [];
+
+  const userDocs = await Promise.all(
+    listData.usersInList.map((userId: string) => getDoc(doc(db, "users", userId)))
+  );
+
+  const userEmails = userDocs.map(userDoc => {
+    const userData = userDoc.data();
+    return userData?.email || userDoc.id;  // fallback
+  });
+
+  return userEmails;
+};

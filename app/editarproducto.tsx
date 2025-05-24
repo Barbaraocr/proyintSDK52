@@ -1,10 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router, SearchParams, useLocalSearchParams } from 'expo-router';
-import { getProductoById, modifyProducto } from '@/services/Products';
+import { deleteProducto, getProductoById, modifyProducto } from '@/services/Products';
 
 const EditProductScreen: React.FC = () => {
   const { id } = useLocalSearchParams();
+  const handleDelete = async () => {
+  if (!idString) return;
+
+  try {
+    await deleteProducto(idString);
+    alert("Producto eliminado correctamente");
+    router.back(); // Vuelve a la pantalla anterior
+  } catch (error) {
+    console.error("Error al eliminar el producto:", error);
+    alert("Error al eliminar el producto");
+  }
+};
 
   const [product, setProduct] = useState<any>(null); 
   const [name, setName] = useState('');
@@ -71,9 +83,10 @@ const EditProductScreen: React.FC = () => {
         <Text style={styles.title}>Editar producto</Text>
       </View>
 
-      <TouchableOpacity style={styles.deleteButton}>
+      <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
         <Text style={styles.deleteButtonText}>Eliminar producto</Text>
       </TouchableOpacity>
+
 
       {/* Formulario para editar el producto */}
       <View style={styles.formContainer}>
