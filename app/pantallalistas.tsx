@@ -319,7 +319,15 @@ export default function ListScreen(){
 
   return (
     <View style={styles.container}>
-      {/* Botón de menú hamburguesa */}
+
+      <TouchableOpacity
+    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, alignSelf: 'flex-start' }}
+    onPress={() => router.navigate('/')}
+  >
+    <Ionicons name="arrow-back" size={24} color="#256847" />
+    <Text style={{ marginLeft: 8, color: '#256847', fontWeight: 'bold' }}>Inicio</Text>
+  </TouchableOpacity>
+      
       <TouchableOpacity style={styles.menuIcon} onPress={() => {
           if (selectedList?.id) {
             navigationToEditingOptions(selectedList.id);

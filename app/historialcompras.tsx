@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-
 import {
   getPurchaseHistoryByUserId,
   getPurchaseHistoryByDateRange,
@@ -18,6 +17,7 @@ import {
 } from '@/services/purchasehistory';
 import { PurchaseHistory } from '@/models/PurchaseHistory';
 import { getUserIdFromSession } from '@/services/auth';
+import { useRouter } from 'expo-router';
 
 export default function PurchaseHistoryScreen() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -26,10 +26,9 @@ export default function PurchaseHistoryScreen() {
   const [productName, setProductName] = useState<string>('');
   const [listName, setListName] = useState<string>('');
   const [purchaseHistory, setPurchaseHistory] = useState<PurchaseHistory[]>([]);
-
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-
+  const router = useRouter();
   // Obtener ID de usuario al montar
   useEffect(() => {
     getUserIdFromSession()
@@ -85,7 +84,13 @@ export default function PurchaseHistoryScreen() {
   };
 
   return (
+    
     <View style={styles.container}>
+      <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }} onPress={() => router.back()}>
+      <Ionicons name="arrow-back" size={24} color="#256847" />
+      <Text style={{ marginLeft: 8, color: '#256847', fontWeight: 'bold' }}>Regresar</Text>
+    </TouchableOpacity>
+
       <Text style={styles.title}>Historial de Compras</Text>
 
       {/* Filtros de fecha */}
@@ -186,7 +191,11 @@ export default function PurchaseHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  container: { 
+    flex: 1, 
+    padding: 16, 
+    backgroundColor: '#fff',
+    paddingTop: 60, },
   title: { 
     fontSize: 20, 
     fontWeight: 'bold', 
