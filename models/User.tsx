@@ -1,32 +1,40 @@
-// models/User.tsx
 import { QueryDocumentSnapshot } from "firebase/firestore";
 import { app } from "@/firebaseConfig";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 
 const db = getFirestore(app);
 
 export class User {
-  id?: string; // Propiedad opcional para almacenar el ID del documento
+  id?: string;
   email: string;
   name: string;
-  profileImage?: string; // Nuevo campo para la URL de la imagen de perfil
+  phone?: string; // 📱 Nuevo campo
+  profileImage?: string;
 
-  constructor(email: string, name: string, id?: string, profileImage?: string) {
+  constructor(
+    email: string,
+    name: string,
+    id?: string,
+    profileImage?: string,
+    phone?: string
+  ) {
     if (!email || !name) {
       throw new Error("Email and Name are required fields.");
     }
 
-    this.id = id; // Asignar el id solo si se pasa como argumento
+    this.id = id;
     this.email = email;
     this.name = name;
-    this.profileImage = profileImage; // Asignar profileImage solo si se pasa
+    this.profileImage = profileImage;
+    this.phone = phone; // Asignar phone si se pasa
   }
 
-  toFirestore(): { email: string; name: string; profileImage?: string } {
+  toFirestore(): { email: string; name: string; profileImage?: string; phone?: string } {
     return {
       email: this.email,
       name: this.name,
       ...(this.profileImage ? { profileImage: this.profileImage } : {}),
+      ...(this.phone ? { phone: this.phone } : {}),
     };
   }
 
@@ -36,7 +44,8 @@ export class User {
       data.email,
       data.name,
       snapshot.id,
-      data.profileImage // Recuperar profileImage desde Firestore
+      data.profileImage,
+      data.phone // 📥 Recuperar phone de Firestore
     );
   }
 }

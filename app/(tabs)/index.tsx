@@ -52,7 +52,9 @@ const HomeScreen: React.FC = () => {
   // Obtener íconos aleatorios para cada lista
 
   useEffect(() => {
+
     const unsubscribe = auth.onAuthStateChanged(async (user: import('firebase/auth').User | null) => {
+
       if (user) {
         const userId = await getUserIdFromSession();
         if (userId) {
