@@ -82,7 +82,7 @@ useEffect(() => {
     <View style={styles.container}>
       <TouchableOpacity
   style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, alignSelf: 'flex-start' }}
-  onPress={() => router.navigate('/pantallalistas')}
+  onPress={() => router.navigate(`/pantallalistas?id=${id}`)}
 >
   <Ionicons name="arrow-back" size={24} color="#256847" />
   <Text style={{ marginLeft: 8, color: '#256847', fontWeight: 'bold' }}>Regresar</Text>
