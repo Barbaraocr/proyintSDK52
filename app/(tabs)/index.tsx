@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,9 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth } from "@/firebaseConfig";
-import { getUserIdFromSession } from "../../services/auth";
-import { getIndividualListsByUserId, getCollaborativeListsByUserId, getRandomIconUrl } from "../../services/lists";
-import { List } from "../../models/Lists";
+import { getUserIdFromSession } from "@/services/auth";
+import { getIndividualListsByUserId, getCollaborativeListsByUserId, getRandomIconUrl } from "@/services/lists";
+import { List } from "@/models/Lists";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 const { width } = Dimensions.get("window");
@@ -52,7 +52,9 @@ const HomeScreen: React.FC = () => {
   // Obtener íconos aleatorios para cada lista
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user: any) => {
+
+    const unsubscribe = auth.onAuthStateChanged(async (user: import('firebase/auth').User | null) => {
+
       if (user) {
         const userId = await getUserIdFromSession();
         if (userId) {
@@ -232,7 +234,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 15,
     color: '#FFF',
-    fontWeight: 'medium', // Cambiar a '500' para consistencia
+    //fontWeight: 'medium', // Cambiar a '500' para consistencia
     textAlign: 'center',
   },
   carouselContainer: {
