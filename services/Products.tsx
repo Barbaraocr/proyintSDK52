@@ -3,10 +3,11 @@ import { db } from "@/firebaseConfig";
 import { doc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs,getDoc, addDoc  } from "firebase/firestore";
 import { ProductoLista } from "../models/ProductsList";
 import { Producto } from "../models/Products";
+import { getPurchaseHistoryByUserId } from "./purchasehistory";
 
-export async function addProducto(nombre: string, category: string, imagenURL: string, price: number): Promise<void> {
+export async function addProducto(nombre: string, category: string, imagenURL: string, price: number,supermarket: string): Promise<void> {
   // Crear una nueva instancia de Producto
-  const producto = new Producto(null,nombre, category, price, imagenURL);
+  const producto = new Producto(null,nombre, category, price, imagenURL, supermarket);
 
   // Generar un ID único para el producto
   const productoId = doc(collection(db, "productos")).id;
@@ -61,6 +62,44 @@ export async function getProductosByCategory(categoryName: string): Promise<Prod
 
   return productos;
 }
+
+
+
+export async function getSuggestedProductsByRecentCategories(userId: string): Promise<Producto[]> {
+  const history = await getPurchaseHistoryByUserId(userId);
+
+  // Get last 5 distinct purchases (by productName)
+  const lastProducts = [...new Map(
+    history.reverse().map(p => [p.productName, p])
+  ).values()].slice(0, 5);
+
+  const purchasedNames = lastProducts.map(p => p.productName);
+
+  // Load all products once
+  const allProducts = await getProductos();
+
+  // Find categories of last purchased products
+  const categories = lastProducts
+    .map(p => {
+      const product = allProducts.find(prod => prod.nombre === p.productName);
+      return product?.categoria;
+    })
+    .filter((cat): cat is string => !!cat); // Remove null/undefined
+
+  const uniqueCategories = [...new Set(categories)];
+
+  // Fetch products by those categories, excluding the ones already bought
+  const suggested: Producto[] = [];
+
+  for (const category of uniqueCategories) {
+    const productos = await getProductosByCategory(category);
+    const filtered = productos.filter(p => !purchasedNames.includes(p.nombre || ""));
+    suggested.push(...filtered);
+  }
+
+  return suggested;
+}
+
 
 // Obtener productos en una lista específica
 export async function getProductosByListId(listaId: string): Promise<ProductoLista[]> {

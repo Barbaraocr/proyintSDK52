@@ -1,56 +1,101 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Alert } from 'react-native';
 import { CheckBox } from 'react-native-elements';
 import { useNavigation } from '@react-navigation/native';
-
-const suggestions = [
-  { id: '1', image: require('../assets/product.png'), selected: true },
-  { id: '2', image: require('../assets/product.png'), selected: true },
-  { id: '3', image: require('../assets/product.png'), selected: true },
-  { id: '4', image: require('../assets/product.png'), selected: false },
-  { id: '5', image: require('../assets/product.png'), selected: false },
-];
-
-const tryProducts = [
-  { id: '6', image: require('../assets/product.png'), selected: false },
-  { id: '7', image: require('../assets/product.png'), selected: false },
-  { id: '8', image: require('../assets/product.png'), selected: false },
-  { id: '9', image: require('../assets/product.png'), selected: false },
-  { id: '10', image: require('../assets/product.png'), selected: false },
-  { id: '11', image: require('../assets/product.png'), selected: false },
-  { id: '12', image: require('../assets/product.png'), selected: false },
-  { id: '13', image: require('../assets/product.png'), selected: false },
-];
+import { getSuggestedProductsByRecentCategories } from '../services/Products';
+import { Producto } from '../models/Products';
+import { getListsByUserId } from '../services/lists'; // Asegúrate de tener esto
+import { addProductoToLista } from '../services/productsList'; // Asegúrate de tener esto
+import { List } from '../models/Lists';
+import { ProductoLista } from '../models/ProductsList';
+import { getAuth } from 'firebase/auth';
 
 export default function SuggestedScreen() {
   const navigation = useNavigation();
-  const [selectedSuggestions, setSelectedSuggestions] = useState(suggestions);
-  const [selectedTries, setSelectedTries] = useState(tryProducts);
+  const [suggestedProducts, setSuggestedProducts] = useState<Producto[]>([]);
+  const [userLists, setUserLists] = useState<List[]>([]);
+  const [selectedSuggestions, setSelectedSuggestions] = useState<{ [key: string]: boolean }>({});
+  const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [productToAdd, setProductToAdd] = useState<Producto | null>(null);
 
-  const toggleCheck = (id: string, listType: 'suggestions' | 'tries') => {
-    const list = listType === 'suggestions' ? selectedSuggestions : selectedTries;
-    const updatedList = list.map((item) =>
-      item.id === id ? { ...item, selected: !item.selected } : item
-    );
-    listType === 'suggestions' ? setSelectedSuggestions(updatedList) : setSelectedTries(updatedList);
+  const user = getAuth().currentUser;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!user) return;
+
+        const [products, lists] = await Promise.all([
+          getSuggestedProductsByRecentCategories(user.uid),
+          getListsByUserId(user.uid)
+        ]);
+
+        setSuggestedProducts(products);
+        setUserLists(lists);
+
+        const initialSelection = Object.fromEntries(products.map(p => [p.id!, true]));
+        setSelectedSuggestions(initialSelection);
+      } catch (error) {
+        console.error('Error loading suggestions or lists:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const toggleCheck = (product: Producto) => {
+    setProductToAdd(product);
+    setModalVisible(true); // Open modal for list selection
   };
 
-  const renderProduct = ({ item }: any, listType: 'suggestions' | 'tries') => (
+  const handleAddToList = async (listId: string) => {
+    console.log("Intentando agregar producto a la lista:", listId);
+    if (!productToAdd || !user) return;
+  
+    // Corrección: asignar correctamente el productoId y listaId
+    const productoLista = new ProductoLista(
+      null,                   // id (lo asigna Firebase)
+      productToAdd.id!,       // productoId
+      null,                   // cantidad (se asigna después)
+      listId,                 // ✅ listaId correcto
+      false,                  // isComprado
+      user.uid,               // usuarioAsignado
+      new Date()              // fechaActualizacion
+    );
+  
+    try {
+      await addProductoToLista(productoLista, 1); // Puedes ajustar cantidad si lo deseas
+      Alert.alert('Producto añadido', `El producto fue añadido a la lista correctamente.`);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo añadir el producto a la lista.');
+      console.error('Add product error:', error);
+    } finally {
+      setModalVisible(false);
+      setProductToAdd(null);
+    }
+  };
+  
+
+  const renderProduct = ({ item }: { item: Producto }) => (
     <View style={styles.productContainer}>
-      <Image source={item.image} style={styles.productImage} />
-      <Text style={styles.productText}>Producto</Text>
+      <Image
+        source={item.imagenURL ? { uri: item.imagenURL } : require('../assets/product.png')}
+        style={styles.productImage}
+      />
+      <Text style={styles.productText}>{item.nombre}</Text>
       <CheckBox
-        checked={item.selected}
-        onPress={() => toggleCheck(item.id, listType)}
+        checked={!!selectedSuggestions[item.id!]}
+        onPress={() => toggleCheck(item)}
         containerStyle={{ backgroundColor: 'transparent', borderWidth: 0, padding: 0 }}
-        style={{ alignSelf: 'center' }}
       />
     </View>
   );
 
   return (
     <View style={styles.fullContainer}>
-      {/* Parte verde superior curva */}
       <View style={styles.greenHeader}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backIcon}>←</Text>
@@ -60,29 +105,40 @@ export default function SuggestedScreen() {
       <View style={styles.container}>
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Sugerencias para ti</Text>
-          <FlatList
-            data={selectedSuggestions}
-            horizontal
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => renderProduct({ item }, 'suggestions')}
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Tal vez quieras probar</Text>
-          <FlatList
-            data={selectedTries}
-            numColumns={4}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => renderProduct({ item }, 'tries')}
-            contentContainerStyle={styles.tryList}
-          />
+          {loading ? (
+            <ActivityIndicator size="large" color="#00a680" />
+          ) : (
+            <FlatList
+              data={suggestedProducts}
+              horizontal
+              keyExtractor={(item) => item.id!}
+              renderItem={renderProduct}
+              showsHorizontalScrollIndicator={false}
+            />
+          )}
         </View>
       </View>
+
+      {/* Modal para seleccionar la lista */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>¿A qué lista deseas agregarlo?</Text>
+            {userLists.map(list => (
+              <TouchableOpacity key={list.id} style={styles.modalButton} onPress={() => handleAddToList(list.id!)}>
+                <Text style={styles.modalButtonText}>{list.listName}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCancel}>
+              <Text style={{ color: 'red' }}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   fullContainer: {
@@ -150,4 +206,32 @@ const styles = StyleSheet.create({
   tryList: {
     alignItems: 'center',
   },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#00000099',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalButton: {
+    paddingVertical: 10,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    color: '#00a680',
+  },
+  modalCancel: {
+    marginTop: 10,
+    alignItems: 'center',
+  }
 });
