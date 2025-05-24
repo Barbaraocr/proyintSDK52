@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router, SearchParams, useLocalSearchParams } from 'expo-router';
 import { getProductoById, modifyProducto } from '@/services/Products';
-
+import { Ionicons } from '@expo/vector-icons';
 
 const EditProductScreen: React.FC = () => {
   const { id } = useLocalSearchParams();

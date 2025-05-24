@@ -593,10 +593,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f5f5f5',
+    paddingTop: 60,
   },
   menuIcon: {
     position: 'absolute',
-    top: 10,
+    top: 60,
     right: 10,
     zIndex: 10,
   },
@@ -782,6 +783,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderRadius: 5,
     backgroundColor: '#ffebee',
+    paddingTop: 60,
   },
   deleteButtonText: {
     color: '#d32f2f',

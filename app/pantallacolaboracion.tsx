@@ -7,9 +7,12 @@ import { List } from '@/models/Lists';
 import { getListById, getUsersInList } from '@/services/lists';
 import { User } from "@/models/User"; // Asegúrate de importar la clase `User`
 import { getUserById } from '@/services/userservices';
+import { useRouter } from 'expo-router';
 
 const CollaborationScreen = () => {
   const { id } = useLocalSearchParams();
+
+  const router = useRouter();
 
   const encodeBase64 = (data: string | undefined) => {
     try {
@@ -75,7 +78,16 @@ useEffect(() => {
   }, [id]); // Solo dependemos de `id`, no de `selectedList`
 
   return (
+    
     <View style={styles.container}>
+      <TouchableOpacity
+  style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, alignSelf: 'flex-start' }}
+  onPress={() => router.navigate('/pantallalistas')}
+>
+  <Ionicons name="arrow-back" size={24} color="#256847" />
+  <Text style={{ marginLeft: 8, color: '#256847', fontWeight: 'bold' }}>Regresar</Text>
+</TouchableOpacity>
+
       {/* Botón remover colaboración */}
       <TouchableOpacity style={styles.removeCollaborationButton}>
         <Text style={styles.removeCollaborationText}>Quitar colaboración</Text>
@@ -119,6 +131,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
     justifyContent: 'space-between',
+    paddingTop: 60,
   },
   removeCollaborationButton: {
     backgroundColor: '#2E7D32',

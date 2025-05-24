@@ -15,7 +15,8 @@ const IconSelectionScreen: React.FC = () => {
   const [supermarket, setSupermarket] = useState(''); // 👈 Nuevo estado
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-
+  const router = useRouter();
+  
   useEffect(() => {
     const loadCategories = async () => {
       const categoryList = await getCategorys();
@@ -24,10 +25,9 @@ const IconSelectionScreen: React.FC = () => {
     loadCategories();
   }, []);
 
->>>>>>> master
   const handleAddProduct = async () => {
     console.log('Product Info:', { productName, productimageURL, price, selectedIcon, supermarket });
-
+  const router = useRouter();
     if (!productName || !selectedIcon || !productimageURL || !price || !supermarket) {
       Alert.alert('Error', 'Faltan datos. Por favor, completa todos los campos antes de agregar el producto.');
       return;

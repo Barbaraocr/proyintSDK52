@@ -25,6 +25,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
     justifyContent: 'space-between',
+    paddingTop: 60,
   },
   removeCollaborationButton: {
     backgroundColor: '#2E7D32',
