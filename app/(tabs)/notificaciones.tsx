@@ -4,6 +4,8 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+
 
 interface ScheduledNotification {
   id: string;
@@ -35,11 +37,15 @@ const NotificationsScreen: React.FC = () => {
     }
 
     // También podemos verificar las notificaciones programadas activamente a través de Expo Notifications
-    Notifications.getAllScheduledNotificationsAsync()
-        .then(activeScheduled => {
-          console.log('Notificaciones activamente programadas:', activeScheduled);
-          // Aquí podrías comparar con las almacenadas si es necesario
-        });
+    if (Platform.OS !== 'web') {
+  Notifications.getAllScheduledNotificationsAsync()
+    .then(activeScheduled => {
+      console.log('Notificaciones activamente programadas:', activeScheduled);
+    });
+  // Aquí podrías comparar con las almacenadas si es necesario
+} else {
+  console.log('getAllScheduledNotificationsAsync no está disponible en la web.');
+}
   };
 
   const removeNotification = async (notificationId: string) => {
