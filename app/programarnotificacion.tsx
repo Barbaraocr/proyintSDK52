@@ -6,13 +6,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import  { Keyboard, TouchableWithoutFeedback} from 'react-native';
 
 const ProgramarNotificacion = () => {
     const router = useRouter();
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedTime, setSelectedTime] = useState(new Date());
     const [message, setMessage] = useState('');
-    const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
 
     const handleDateSelect = (date: { dateString: string }) => {
@@ -20,7 +20,7 @@ const ProgramarNotificacion = () => {
     };
 
     const handleTimeChange = (event: any, selected: Date | undefined) => {
-        setShowTimePicker(false); // Ensure the picker is always hidden after a change or dismissal
+        setShowTimePicker(false);
         if (selected) {
             setSelectedTime(selected);
         }
@@ -38,16 +38,14 @@ const ProgramarNotificacion = () => {
 
         const [year, month, day] = selectedDate.split('-').map(Number);
         const triggerDate = new Date(year, month - 1, day, selectedTime.getHours(), selectedTime.getMinutes(), 0);
-        const notificationId = Math.random().toString(36).substring(7); // Genera un ID único
 
-        const trigger: Notifications.NotificationTriggerInput = {
-            channelId: 'default',
-            date: triggerDate,
-        };
+        const trigger = {
+        date: triggerDate,
+        ...(Platform.OS === 'android' ? { channelId: 'default' } : {}),
+} as any;
 
         try {
-            await Notifications.scheduleNotificationAsync({
-                identifier: notificationId, // Asigna el ID generado
+            const id = await Notifications.scheduleNotificationAsync({
                 content: {
                     title: '¡Recordatorio!',
                     body: message,
@@ -56,12 +54,11 @@ const ProgramarNotificacion = () => {
                 trigger,
             });
 
-            // Guarda la notificación programada en AsyncStorage
             const newNotification = {
-                id: notificationId,
+                id,
                 title: '¡Recordatorio!',
                 body: message,
-                trigger: triggerDate.toISOString(), // Guarda la date como string ISO
+                trigger: triggerDate.toISOString(),
             };
 
             const storedNotifications = await AsyncStorage.getItem('scheduledNotifications');
@@ -72,12 +69,13 @@ const ProgramarNotificacion = () => {
             alert(`Notificación programada para el ${selectedDate} a las ${selectedTime.toLocaleTimeString()}.`);
             router.navigate('/notificaciones');
         } catch (error) {
-            console.error('Error al programar la notificación:', error);
+            console.error('Error al programar la notificación:');
             alert('Hubo un error al programar la notificación.');
         }
     };
 
     return (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.container}>
             <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                 <MaterialIcons name="arrow-back" size={24} color="#000" />
@@ -141,6 +139,7 @@ const ProgramarNotificacion = () => {
                 <Text style={styles.scheduleButtonText}>Programar Notificacion</Text>
             </TouchableOpacity>
         </View>
+        </TouchableWithoutFeedback>
     );
 };
 
@@ -214,4 +213,5 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 });
+
 export default ProgramarNotificacion;
