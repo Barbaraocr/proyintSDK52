@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router, SearchParams, useLocalSearchParams } from 'expo-router';
 import { getProductoById } from '@/services/Products';
-
-
+import { Ionicons } from '@expo/vector-icons';
 
 
 const EditProductScreen: React.FC = () => {
@@ -54,12 +53,18 @@ const EditProductScreen: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        </TouchableOpacity>
-        <Text style={styles.title}>Editar producto</Text>
-      </View>
+  <TouchableOpacity
+    style={styles.backButton}
+    onPress={() => router.navigate('/misproductos')}
+  >
+    <Ionicons name="arrow-back" size={24} color="#256847" />
+    <Text style={styles.backButtonText}>Regresar</Text>
+  </TouchableOpacity>
+</View>
 
+      <Text style={styles.title}>Editar producto</Text>
       <TouchableOpacity style={styles.deleteButton}>
         <Text style={styles.deleteButtonText}>Eliminar producto</Text>
       </TouchableOpacity>
@@ -119,18 +124,28 @@ const EditProductScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButtonText: {
+    marginLeft: 8,
+    color: '#256847',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   container: {
     flexGrow: 1,
     padding: 16,
     backgroundColor: '#FFFFFF',
+    paddingTop: 60,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    marginRight: 8,
-  },
+  
   title: {
     fontSize: 24,
     fontWeight: 'bold',

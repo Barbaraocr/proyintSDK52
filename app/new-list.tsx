@@ -6,6 +6,7 @@ import { Producto } from '@/models/Products';
 import { createList } from '@/services/lists';
 import { List } from '@/models/Lists';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 const CrearNuevaLista = () => {
   const [nombreLista, setNombreLista] = useState('');
@@ -94,6 +95,14 @@ const handleCreateList = async () => {
 
   return (
     <View style={styles.container}>
+
+      <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, alignSelf: 'flex-start' }} 
+      onPress={() => router.navigate('/')}
+  >
+    <Ionicons name="arrow-back" size={24} color="#256847" />
+    <Text style={{ marginLeft: 8, color: '#256847', fontWeight: 'bold' }}>Inicio</Text>
+  </TouchableOpacity>
+
       <Text style={styles.title}>Crear nueva lista</Text>
       
       <Text style={styles.label}>Nombre de la lista</Text>
@@ -187,6 +196,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#fff',
+    paddingTop: 60,
   },
   title: {
     fontSize: 24,

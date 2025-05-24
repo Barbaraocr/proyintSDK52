@@ -3,6 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView,
 import { Category } from '../models/Category';
 import { getCategorys } from '../services/categorias';
 import { addProducto } from '@/services/Products';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+
 
 const IconSelectionScreen: React.FC = () => {
   const [productName, setProductName] = useState('');
@@ -20,6 +23,8 @@ const IconSelectionScreen: React.FC = () => {
     };
     loadCategories();
   }, []);
+
+  const router = useRouter();
 
   // Manejador para agregar el producto
   const handleAddProduct = async () => {
@@ -47,7 +52,16 @@ const IconSelectionScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    
+    
+   <View style={styles.container}>
+    <TouchableOpacity
+      style={[{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }, { alignSelf: 'flex-start' }]}
+      onPress={() => router.navigate('/misproductos')}
+    >
+      <Ionicons name="arrow-back" size={24} color="#256847" />
+      <Text style={{ marginLeft: 8, color: '#256847', fontWeight: 'bold' }}>Regresar</Text>
+    </TouchableOpacity>
       <Text style={styles.title}>Escoge un ícono</Text>
 
       {/* Selección de íconos */}
@@ -105,6 +119,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     padding: 20,
     alignItems: 'center',
+    paddingTop: 60,
   },
   title: {
     fontSize: 18,

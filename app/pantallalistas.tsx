@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
+import { View,
   Text,
   TextInput,
   FlatList,
@@ -21,6 +20,7 @@ import { ProductoLista } from '@/models/ProductsList';
 import { getPurchaseHistoryByFilters, getPurchaseHistoryByDateRange, createPurchaseHistory } from '@/services/purchasehistory';
 import { PurchaseHistory } from '@/models/PurchaseHistory';
 import { getUserIdFromSession } from '@/services/auth';
+
 
 export default function ListScreen(){
 
@@ -231,7 +231,15 @@ useEffect(() => {
   return (
 
     <View style={styles.container}>
-      {/* Botón de menú hamburguesa */}
+
+      <TouchableOpacity
+    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, alignSelf: 'flex-start' }}
+    onPress={() => router.navigate('/')}
+  >
+    <Ionicons name="arrow-back" size={24} color="#256847" />
+    <Text style={{ marginLeft: 8, color: '#256847', fontWeight: 'bold' }}>Inicio</Text>
+  </TouchableOpacity>
+      
       <TouchableOpacity style={styles.menuIcon} onPress={() => {
           if (selectedList?.id) {
             navigationToEditingOptions(selectedList.id);
