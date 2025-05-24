@@ -5,9 +5,6 @@ import { useRouter } from 'expo-router';
 import { getProductos } from '@/services/Products';
 import { Producto } from '@/models/Products';
 
-
-  
-
 const ProductScreen: React.FC = () => {
   const navigateToProductDetails = (productID: string) => {
     console.log("Sharing List With ID:", productID);
@@ -66,9 +63,6 @@ const ProductScreen: React.FC = () => {
         <Text style={styles.newProductText}>Nuevo producto</Text>
       </TouchableOpacity>
 
-
-      
-
     </View>
   );
 };
@@ -78,7 +72,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 60,
   },
   searchContainer: {
     flexDirection: 'row',

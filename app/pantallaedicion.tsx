@@ -159,6 +159,7 @@ const CollaborationScreen = () => {
 };
 
 const styles = StyleSheet.create({
+
   container: { padding: 20 ,backgroundColor: 'white', // Add this line
     flexGrow: 1 },
   label: { fontWeight: 'bold', marginTop: 10 },
@@ -174,6 +175,7 @@ const styles = StyleSheet.create({
   saveButtonText: { color: 'white', textAlign: 'center', fontWeight: 'bold' },
   deleteButton: {
     backgroundColor: '#f44336', padding: 15, borderRadius: 8, marginTop: 10,
+
   },
   deleteButtonText: { color: 'white', textAlign: 'center', fontWeight: 'bold' }, 
   removeCollaborationButton: {

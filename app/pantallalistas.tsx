@@ -321,17 +321,16 @@ export default function ListScreen(){
 
   return (
     <View style={styles.container}>
-      {/* Botón de menú hamburguesa */}
-      <TouchableOpacity style={styles.menuIcon} onPress={() => {
-          if (selectedList?.id) {
-            navigationToEditingOptions(selectedList.id);
-          } else {
-            console.error("selectedList o su ID no están definidos");
-          }
-        }}>
-        <MaterialIcons name="edit" size={24} color="#333" />
-      </TouchableOpacity>
 
+      <TouchableOpacity
+    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, alignSelf: 'flex-start' }}
+    onPress={() => router.navigate('/')}
+  >
+    <Ionicons name="arrow-back" size={24} color="#256847" />
+    <Text style={{ marginLeft: 8, color: '#256847', fontWeight: 'bold' }}>Inicio</Text>
+  </TouchableOpacity>
+      
+      
       {/* Menú lateral */}
       {isMenuOpen && (
         <View style={styles.menuContainer}>
@@ -587,10 +586,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f5f5f5',
+    paddingTop: 60,
   },
   menuIcon: {
     position: 'absolute',
-    top: 10,
+    top: 60,
     right: 10,
     zIndex: 10,
   },
@@ -776,6 +776,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderRadius: 5,
     backgroundColor: '#ffebee',
+    paddingTop: 60,
   },
   deleteButtonText: {
     color: '#d32f2f',
