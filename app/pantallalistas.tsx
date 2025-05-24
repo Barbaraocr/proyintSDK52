@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View,
+import { Alert } from 'react-native';
+import {
+  View,
   Text,
   TextInput,
   FlatList,
@@ -15,30 +17,72 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { List } from '@/models/Lists';
 import { getListById } from '@/services/lists';
 import { Producto } from '@/models/Products';
-import { addProductoToList, getProductoById, getProductos, getProductosByListId, markProductoAsComprado } from '@/services/Products';
+import { addProductoToList, getProductoById, getProductos, getProductosByCategory, getProductosByListId, markProductoAsComprado } from '@/services/Products';
 import { ProductoLista } from '@/models/ProductsList';
 import { getPurchaseHistoryByFilters, getPurchaseHistoryByDateRange, createPurchaseHistory } from '@/services/purchasehistory';
 import { PurchaseHistory } from '@/models/PurchaseHistory';
 import { getUserIdFromSession } from '@/services/auth';
-
-
+import { deleteProductoFromList } from '@/services/Products'; 
 export default function ListScreen(){
 
   const [userId, setUserId] = useState<string | null>(null);
-
-const { id } = useLocalSearchParams();
-
+  const { id } = useLocalSearchParams();
   const [selectedList, setSelectedList] = useState<List>(); // Estado de carga
-
+  const [catalogProducts, setcatalogProducts] = useState<Producto[]>([]); // Estado de carga
+  const [loadChanges, setLoadChanges] = useState<boolean>(); // Estado de carga
+  const [suggestedProducts, setSuggestedProducts] = useState<Producto[]>([]);
+  const [isSuggestedVisible, setSuggestedVisible] = useState(false);
+  const [relatedSuggestions, setRelatedSuggestions] = useState<Producto[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  
   const fetchList = async (listID: string) => {
     try {
       const listSelected = await getListById(listID);
-      setSelectedList(listSelected || undefined); // Si no hay lista, asigna `undefined`
+      setSelectedList(listSelected || undefined); // Si no hay lista, asigna undefined
     } catch (error) {
       console.error('Error fetching individual lists:', error);
     } finally {
     }
   };
+  const handleDeleteProduct = async (productoListaId: string) => {
+    try {
+      await deleteProductoFromList(productoListaId);
+      Alert.alert('Producto eliminado', 'El producto fue eliminado de la lista correctamente.');
+      // Actualiza la lista refrescando los productos
+      if (id && typeof id === 'string') {
+        fetchProductInList(id);
+      }
+    } catch (error) {
+      console.error('Error eliminando producto:', error);
+      Alert.alert('Error', 'No se pudo eliminar el producto. Inténtalo de nuevo.');
+    }
+  };
+  const handleAddProductFromCatalog = async (product: Producto) => {
+    try {
+      const productoLista = new ProductoLista(
+        undefined,
+        product.id || null,
+        1,
+        selectedList?.id || null,
+        false,
+        null,
+        new Date()
+      );
+  
+      await addProductoToList(productoLista, 1);
+      Alert.alert('Éxito', '¡Producto agregado a la lista!');
+      setModalVisible(false); // Cierra el modal
+  
+      if (id && typeof id === 'string') {
+        fetchProductInList(id); // Refresca los productos
+      }
+    } catch (error) {
+      console.error('Error al agregar producto desde el catálogo:', error);
+      Alert.alert('Error', 'Hubo un problema al agregar el producto. Inténtalo de nuevo.');
+    }
+  };
+  
+  
   useEffect(() => {
     if (id && typeof id === 'string') {
       fetchList(id); // Llama a fetchList con el ID del parámetro
@@ -47,21 +91,12 @@ const { id } = useLocalSearchParams();
     getUserIdFromSession().then(uid => setUserId(uid));
   }, [id]);
   
-  
-  // Ejecuta fetchList al cargar el componente o cuando cambia el ID
-  
-  const [catalogProducts, setcatalogProducts] = useState<Producto[]>([]); // Estado de carga
-  const [loadChanges, setLoadChanges] = useState<boolean>(); // Estado de carga
-
-  
-  
-  
   const [products, setProducts] = useState<ProductoLista[]>([]); // Estado de carga
   
   const fetchProductInList = async (listID: string) => {
     try {
       const AllProductsInList = await getProductosByListId(listID);
-      setProducts(AllProductsInList || undefined); // Si no hay lista, asigna `undefined`
+      setProducts(AllProductsInList || undefined); // Si no hay lista, asigna undefined
     } catch (error) {
       console.error('Error fetching individual lists:', error);
     } finally {
@@ -74,7 +109,6 @@ const { id } = useLocalSearchParams();
       fetchProductInList(id); // Llama a fetchList con el ID del parámetro
     }
   }, [id]);
-
   
   type DetailedProduct = ProductoLista & { productoOriginal?: Producto | null };
   
@@ -99,49 +133,87 @@ const { id } = useLocalSearchParams();
       });
   
       const results = await Promise.all(promises);
-  
-  
+      
       // Filtra valores nulos para evitar errores en setDetailedProducts
       const filteredResults = results.filter((result): result is DetailedProduct => result !== null);
       console.log(filteredResults)
   
       // Actualiza el estado con los productos detallados
       setDetailedProducts(filteredResults);
+
+      // Extract categories from the detailed products
+      const productCategories = filteredResults
+        .map(product => product.productoOriginal?.categoria)
+        .filter((category): category is string => category !== undefined && category !== null);
+      
+      // Remove duplicates from categories array
+      const uniqueCategories = [...new Set(productCategories)];
+      setCategories(uniqueCategories);
+
+      // Fetch related products based on the categories
+      if (uniqueCategories.length > 0) {
+        await loadRelatedSuggestions(uniqueCategories);
+      }
     } catch (error) {
       console.error('Error loading detailed products:', error);
     }
   };
+
+  // Function to load suggested products based on categories
+  const loadRelatedSuggestions = async (categories: string[]) => {
+    try {
+      const allSuggestions: Producto[] = [];
+      
+      // Fetch products for each category
+      for (const category of categories) {
+        const products = await getProductosByCategory(category);
+        allSuggestions.push(...products);
+      }
+      
+      // Filter out products that are already in the list
+      const existingProductIds = detailedProducts.map(product => product.productoId);
+      const filteredSuggestions = allSuggestions.filter(product => 
+        !existingProductIds.includes(product.id as any)
+      );
+      // Remove duplicates (products might appear in multiple categories)
+      const uniqueSuggestions = filteredSuggestions.filter((product, index, self) =>
+        index === self.findIndex(p => p.id === product.id)
+      );
+      
+      // Limit to a reasonable number of suggestions (e.g., 10)
+      const limitedSuggestions = uniqueSuggestions.slice(0, 10);
+      
+      setRelatedSuggestions(limitedSuggestions);
+    } catch (error) {
+      console.error('Error loading related product suggestions:', error);
+    }
+  };
   
   const getGroupedProducts = () => {
-    const groupedByName: { [key: string]: DetailedProduct[] } = {};
+    const groupedByCategory: { [key: string]: DetailedProduct[] } = {};
   
     detailedProducts.forEach(product => {
-      const name = product.productoOriginal?.nombre || 'Sin nombre'; // Cambiar esta linea cuando se agregen los departamentos para agrupar por departamentos
-      if (!groupedByName[name]) {
-        groupedByName[name] = [];
+      const categoria = product.productoOriginal?.categoria || 'Sin categoría'; // Agrupar por categoría
+      if (!groupedByCategory[categoria]) {
+        groupedByCategory[categoria] = [];
       }
-      groupedByName[name].push(product);
+      groupedByCategory[categoria].push(product);
     });
   
-    return Object.entries(groupedByName).map(([name, items]) => ({
-      nombre: name,
+    return Object.entries(groupedByCategory).map(([categoria, items]) => ({
+      categoria,
       cantidad: items.length,
       productos: items,
     }));
   };
+  
   const [selectedProducts, setSelectedProducts] = useState<{ [id: string]: boolean }>({});
 
   useEffect(() => {
     if (products.length > 0) {
       loadDetailedProducts(products); // Llama al método con la lista de productos
     }
-  }, [products,loadChanges]);
-
-  useEffect(() => {
-    if (products.length > 0) {
-      loadDetailedProducts(products); // Llama al método con la lista de productos
-    }
-  }, [loadChanges]);
+  }, [products, loadChanges]);
 
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -149,53 +221,70 @@ const { id } = useLocalSearchParams();
   const [isModalVisible, setModalVisible] = useState(false);
   const [grouped, setGrouped] = useState(false);
 
-
   const toggleSelection = async (id: string) => {
-    
-      try {
-    
-    // Update the selectedProducts state first to reflect the UI change
-    setSelectedProducts((prevState) => ({
-      ...prevState,
-      [id]: !prevState[id], // Toggle selection for the specific product
-    }));
-    
-    // Update the 'isComprado' field for the corresponding product
-    // Now call the API to update the product's purchase status in the backend
-    await markProductoAsComprado(id);
-  } catch (error) {
-    console.error(`Error updating the product with ID ${id}:`, error);
-  } finally {
-  }
-};
+    try {
+      // Update the selectedProducts state first to reflect the UI change
+      setSelectedProducts((prevState) => ({
+        ...prevState,
+        [id]: !prevState[id], // Toggle selection for the specific product
+      }));
+      
+      // Update the 'isComprado' field for the corresponding product
+      // Now call the API to update the product's purchase status in the backend
+      await markProductoAsComprado(id);
+    } catch (error) {
+      console.error(`Error updating the product with ID ${id}:`, error);
+    } finally {
+    }
+  };
 
-const handleBuyProduct = async (item: DetailedProduct) => {
-  if (!userId) {
-    console.error('Usuario no autenticado');
-    return;
-  }
-  try {
-    const compra = new PurchaseHistory(
-      userId,
-      item.productoOriginal?.precio ?? 0,
-      new Date(),
-      item.productoOriginal?.nombre ?? '',
-      selectedList?.listName ?? ''
-    );
-    const idGen = await createPurchaseHistory(compra);
-    compra.idCompra = idGen;
-    console.log('Compra registrada:', compra);
-    // Opcional: refresca el historial en pantalla
-    //router.push('/historialcompras');
-  } catch (err) {
-    console.error('Error creando compra:', err);
-  }
-};
+  const handleBuyProduct = async (item: DetailedProduct) => {
+    if (!userId) {
+      console.error('Usuario no autenticado');
+      return;
+    }
+    try {
+      const compra = new PurchaseHistory(
+        userId,
+        item.productoOriginal?.precio ?? 0,
+        new Date(),
+        item.productoOriginal?.nombre ?? '',
+        selectedList?.listName ?? ''
+      );
+      const idGen = await createPurchaseHistory(compra);
+      compra.idCompra = idGen;
+      console.log('Compra registrada:', compra);
+      // Opcional: refresca el historial en pantalla
+      //router.push('/historialcompras');
+    } catch (err) {
+      console.error('Error creando compra:', err);
+    }
+  };
 
+  const handleAddSuggestion = async (product: Producto) => {
+    try {
+      const productoLista = new ProductoLista(
+        undefined, // ID opcional
+        product.id || null, // Referencia al ID del Producto
+        1, // Cantidad inicial
+        selectedList?.id || null, // ID de la lista
+        false, // Inicializa como no comprado
+        null, // Usuario asignado, opcional
+        new Date() // Fecha de creación/actualización
+      );
 
-  
-
-// Función para actualizar el estado en Firestore
+      await addProductoToList(productoLista, 1);
+      Alert.alert('Éxito', '¡Producto agregado a la lista!');
+      
+      // Refresh the list to show the new product
+      if (id && typeof id === 'string') {
+        fetchProductInList(id);
+      }
+    } catch (error) {
+      console.error('Error al agregar producto sugerido:', error);
+      Alert.alert('Error', 'Hubo un problema al agregar el producto. Inténtalo de nuevo.');
+    }
+  };
 
   const totalSelected = detailedProducts.reduce(
     (total, product) =>
@@ -207,29 +296,28 @@ const handleBuyProduct = async (item: DetailedProduct) => {
     console.log("Going to SharingOptions of Collaboration With ID:", listId);
     router.navigate(`/pantallacolaboracion?id=${listId}`);
   };
+  
   const navigationToEditingOptions = (listId: string) => {
     console.log("Going to SettingOptions of Collaboration With ID:", listId);
     router.navigate(`/pantallaedicion?id=${listId}`);
   };
-//?id=${listId}
-const fetchProductos = async () => {
-  try {
-    const allproducts = await getProductos();
-    setcatalogProducts(allproducts); // Si no hay lista, asigna `undefined`
-  } catch (error) {
-    console.error('Error fetching individual lists:', error);
-  } finally {
-  }
-};
 
-// Ejecuta fetchList al cargar el componente o cuando cambia el ID
-useEffect(() => {
-  fetchProductos(); // Llama a fetchList con el ID del parámetro
+  const fetchProductos = async () => {
+    try {
+      const allproducts = await getProductos();
+      setcatalogProducts(allproducts); // Si no hay lista, asigna undefined
+    } catch (error) {
+      console.error('Error fetching individual lists:', error);
+    } finally {
+    }
+  };
 
-}, [id]);
+  // Ejecuta fetchList al cargar el componente o cuando cambia el ID
+  useEffect(() => {
+    fetchProductos(); // Llama a fetchList con el ID del parámetro
+  }, [id]);
 
   return (
-
     <View style={styles.container}>
 
       <TouchableOpacity
@@ -304,10 +392,10 @@ useEffect(() => {
       {grouped ? (
       <FlatList
         data={getGroupedProducts()}
-        keyExtractor={(item) => item.nombre}
+        keyExtractor={(item) => item.categoria}
         renderItem={({ item }) => (
           <View style={styles.groupContainer}>
-            <Text style={styles.groupTitle}>{item.nombre} ({item.cantidad})</Text>
+            <Text style={styles.groupTitle}>{item.categoria} ({item.cantidad})</Text>
             {item.productos.map(producto => (
               <View key={producto.id} style={styles.productContainer}>
                 <Image
@@ -371,12 +459,50 @@ useEffect(() => {
               >
                 <Text style={styles.buyButtonText}>Comprar</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.buyButton, { backgroundColor: '#E53935', marginLeft: 10 }]}
+                onPress={() => {
+                  if (item.id) {
+                    handleDeleteProduct(item.id);
+                  }
+                }}
+              >
+                <Ionicons name="trash" size={20} color="white" />
+              </TouchableOpacity>
             </View>
           </View>
         )}
       />
     )}
 
+      {/* Sugerencias basadas en categorías de la lista */}
+      {relatedSuggestions.length > 0 && (
+        <View style={styles.suggestionsContainer}>
+          <Text style={styles.suggestionsTitle}>Productos sugeridos según tu lista:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {relatedSuggestions.map((product) => (
+              <TouchableOpacity
+                key={product.id}
+                style={styles.suggestionItem}
+                onPress={() => handleAddSuggestion(product)}
+              >
+                <Image
+                  source={{ uri: product.imagenURL || 'default_image_url' }}
+                  style={styles.suggestionImage}
+                />
+                <Text style={styles.suggestionName} numberOfLines={2}>{product.nombre}</Text>
+                <Text style={styles.suggestionPrice}>${product.precio?.toFixed(2) || '0.00'}</Text>
+                <TouchableOpacity
+                  style={styles.addSuggestionButton}
+                  onPress={() => handleAddSuggestion(product)}
+                >
+                  <Text style={styles.addSuggestionButtonText}>Agregar</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Montos */}
       <View style={styles.totalsContainer}>
@@ -393,150 +519,148 @@ useEffect(() => {
         <Text style={styles.addButtonText}>Agregar producto</Text>
       </TouchableOpacity>
 
-      {/* Modal */}
       <Modal visible={isModalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Catálogo de productos</Text>
-            <ScrollView contentContainerStyle={styles.productsGrid}>
-              {catalogProducts.map((product) => (
-                <TouchableOpacity
-                  key={product.id}
-                  style={styles.productItem}
-                  onPress={() => {
-                    const productoLista = new ProductoLista(
-                      undefined, // ID opcional
-                      product.id || null, // Referencia al ID del Producto
-                      1, // Cantidad inicial
-                      selectedList?.id || null, // ID de la lista desde `useLocalSearchParams`
-                      false, // Inicializa como no comprado
-                      null, // Usuario asignado, opcional
-                      new Date() // Fecha de creación/actualización
-                    );
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Catálogo de productos</Text>
+      <ScrollView contentContainerStyle={styles.productsGrid}>
+        {catalogProducts.map((product) => (
+          <TouchableOpacity
+            key={product.id}
+            style={styles.productItem}
+            onPress={async () => {
+              try {
+                const productoLista = new ProductoLista(
+                  undefined,
+                  product.id || null,
+                  1,
+                  selectedList?.id || null,
+                  false,
+                  null,
+                  new Date()
+                );
 
-                    // Llama a la función con el nuevo objeto ProductoLista
-                    addProductoToList(productoLista, 1);
-                    console.log("added product to list:")
-                    console.log(productoLista)
-                  }}
+                await addProductoToList(productoLista, 1);
+                Alert.alert('Éxito', '¡Producto agregado a la lista!');
+                setModalVisible(false); // Cierra el modal
 
-                >
-                  <Image source={{ uri: product.imagenURL || 'https://via.placeholder.com/150' }} style={styles.productImage} />
-                  <Text style={styles.productName}>{product.nombre}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity
-              style={styles.newProductButton}
-              onPress={() => {
-                setModalVisible(false);
-                router.push('/agregarproducto');
-              }}
-            >
-              <MaterialIcons name="add-circle-outline" size={48} color="#2E7D32" />
-              <Text style={styles.newProductText}>Nuevo producto</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Cerrar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal >
-    </View >
+                // Refrescar la lista si hay un id válido
+                if (id && typeof id === 'string') {
+                  fetchProductInList(id);
+                }
+              } catch (error) {
+                console.error('Error al agregar producto del catálogo:', error);
+                Alert.alert('Error', 'No se pudo agregar el producto. Intenta de nuevo.');
+              }
+            }}
+          >
+            <Image
+              source={{ uri: product.imagenURL || 'https://via.placeholder.com/150' }}
+              style={styles.productImage}
+            />
+            <Text style={styles.productName}>{product.nombre}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <TouchableOpacity
+        style={styles.newProductButton}
+        onPress={() => {
+          setModalVisible(false);
+          router.push('/nuevoagregarproducto');
+        }}
+      >
+        <MaterialIcons name="add-circle-outline" size={48} color="#2E7D32" />
+        <Text style={styles.newProductText}>Nuevo producto</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={() => setModalVisible(false)}
+      >
+        <Text style={styles.closeButtonText}>Cerrar</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
+    </View>
   );
 };
 
-
-
 const styles = StyleSheet.create({
-  titlecontainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "flex-start",
-    height: "auto"
-  },
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
-    paddingTop: 50,
+    backgroundColor: '#f5f5f5',
   },
   menuIcon: {
     position: 'absolute',
     top: 10,
-    left: 330,
-    zIndex: 1100, // Asegúrate de que esté por encima de otros elementos
-    padding: 10,  // Incrementa el área táctil
+    right: 10,
+    zIndex: 10,
   },
-  menuContainer: {
-    position: 'absolute',
-    top: 50,
-    left: 0,
-    width: '80%',
-    height: '100%',
-    backgroundColor: '#fff',
-    padding: 16,
-    zIndex: 1000,
-  },
-  menuButton: {
-    backgroundColor: '#256847',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-  },
-  menuButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  deleteButton: {
-    backgroundColor: '#C73E3C',
-    borderRadius: 20,
-    padding: 16,
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
+  titlecontainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'left',
-    paddingRight: 15,
-    marginLeft: 15,
+    marginBottom: 10,
   },
-  searchContainer: {
+  searchGroupContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  searchContainer2: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    marginBottom: 16,
-  },
-  searchInput: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    borderRadius: 20,
     flex: 1,
-    paddingVertical: 8,
-    marginLeft: 8,
-    fontSize: 16,
+    height: 40,
+    marginRight: 10,
+  },
+  searchInput2: {
+    marginLeft: 5,
+    flex: 1,
+  },
+  groupButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e0f2e0',
+    padding: 8,
+    borderRadius: 20,
+  },
+  groupButtonText: {
+    marginLeft: 5,
+    color: '#2E7D32',
+    fontWeight: 'bold',
   },
   productContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#fff',
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 10,
+    marginBottom: 8,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   productImage: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    marginRight: 16,
+    marginRight: 10,
   },
   productInfo: {
     flex: 1,
@@ -547,41 +671,63 @@ const styles = StyleSheet.create({
   },
   productPrice: {
     fontSize: 14,
-    color: '#888',
+    color: '#666',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buyButton: {
+    backgroundColor: '#2E7D32',
+    padding: 6,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  buyButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
   totalsContainer: {
-    marginTop: 16,
+    backgroundColor: '#fff',
+    padding: 5,
+    borderRadius: 10,
+    marginVertical: 10,
   },
   totalText: {
-    fontSize: 16,
-    marginVertical: 4,
+    fontSize: 14,
+    marginBottom: 5,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    backgroundColor: '#e0f2e0',
+    padding: 10,
+    borderRadius: 10,
   },
   addButtonText: {
-    fontSize: 16,
-    marginLeft: 8,
+    marginLeft: 10,
+    fontWeight: 'bold',
     color: '#2E7D32',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: '#fff',
-    margin: 16,
-    borderRadius: 8,
-    padding: 16,
+    width: '90%',
+    borderRadius: 10,
+    padding: 20,
+    maxHeight: '80%',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 15,
     textAlign: 'center',
   },
   productsGrid: {
@@ -590,90 +736,189 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   productItem: {
+    width: '45%',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 15,
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  newProductButton: {
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  newProductText: {
-    marginTop: 8,
-    fontSize: 16,
-    color: '#2E7D32',
   },
   closeButton: {
-    marginTop: 16,
+    backgroundColor: '#e0e0e0',
+    padding: 10,
+    borderRadius: 5,
     alignItems: 'center',
+    marginTop: 10,
   },
   closeButtonText: {
-    color: '#C73E3C',
-    fontSize: 16,
+    fontWeight: 'bold',
   },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
+  menuContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 10,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 10,
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  buyButton: {
-    marginLeft: 16,
-    backgroundColor: '#2E7D32',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
+  menuButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
   },
-  buyButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+  menuButtonText: {
+    color: '#333',
+    fontWeight: 'bold',
   },
-  searchGroupContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+  deleteButton: {
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    backgroundColor: '#ffebee',
   },
-  
-  searchContainer2: {
-    flex: 1, // ← para que el TextInput ocupe todo el espacio posible
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    marginRight: 8, // ← separación del botón
-  },
-  
-  searchInput2: {
-    flex: 1,
-    paddingVertical: 8,
-    marginLeft: 8,
-    fontSize: 16,
-  },
-  
-  groupButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e0f2e9',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  
-  groupButtonText: {
-    marginLeft: 6,
-    fontSize: 14,
-    color: '#2E7D32',
+  deleteButtonText: {
+    color: '#d32f2f',
     fontWeight: 'bold',
   },
   groupContainer: {
-    marginBottom: 16,
-    backgroundColor: '#e0f2f1',
+    backgroundColor: '#e0f2e0',
+    marginBottom: 10,
+    borderRadius: 10,
     padding: 10,
-    borderRadius: 8,
   },
   groupTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#2E7D32',
+  },
+  newProductButton: {
+    alignItems: 'center',
+    padding: 10,
+    marginBottom: 10,
+  },
+  newProductText: {
+    marginTop: 5,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+  },
+  // Styles for the suggestions section
+  suggestionsContainer: {
+    backgroundColor: '#e8f5e9',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  suggestionsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    marginBottom: 10,
+  },
+  suggestionItem: {
+    width: 150,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 10,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  suggestionImage: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
     marginBottom: 8,
   },
-});
-
+  suggestionName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    height: 40,
+  },
+  suggestionPrice: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  addSuggestionButton: {
+    backgroundColor: '#2E7D32',
+    padding: 6,
+    borderRadius: 5,
+    width: '80%',
+    alignItems: 'center',
+  },
+  addSuggestionButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  scrollContainer: {
+    marginBottom: 10,
+  },
+  iconContainer: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+  },
+  iconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#e0e0e0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  iconImage: {
+    width: 40,
+    height: 40,
+  },
+  selectedIcon: {
+    borderWidth: 2,
+    borderColor: '#2E7D32',
+  },
+  detailsContainer: {
+    marginVertical: 15,
+  },
+  input: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  suggestedContainer: {
+    marginTop: 20,
+  },
+  suggestedTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  suggestedProductContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 5,
+    marginBottom: 5,
+    alignItems: 'center',
+  },
+  suggestedImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  suggestedProductName: {
+    flex: 1,
+    fontWeight: 'bold',
+  },
+  suggestedProductPrice: {
+    color: '#2E7D32',
+    fontWeight: 'bold',
+  } })

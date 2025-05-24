@@ -1,29 +1,26 @@
-// PantallaComparacion.tsx
-import React, { useState } from 'react';
-import { View, Text, Button, Modal, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Button, Modal, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
-
-interface Producto {
-  id: string;
-  name: string;
-  categoria: string;
-  supermercado: string;
-  precio: number;
-}
-
-const productosDisponibles: Producto[] = [
-  { id: '1', name: 'Lechuga', categoria: 'Verduras', supermercado: 'Super A', precio: 30 },
-  { id: '2', name: 'Lechuga', categoria: 'Verduras', supermercado: 'Super A', precio: 35 },
-  { id: '3', name: 'Tomate', categoria: 'Verduras', supermercado: 'Super B', precio: 25 },
-  { id: '4', name: 'Tomate', categoria: 'Verduras', supermercado: 'Super C', precio: 28 },
-];
-
+import { Producto } from '@/models/Products'; // Asegúrate de que el modelo esté bien importado
+import { getProductos } from '@/services/Products';
+import { Image } from 'react-native';
 export default function PantallaComparacion() {
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [producto1, setProducto1] = useState<Producto | null>(null);
   const [producto2, setProducto2] = useState<Producto | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [seleccionandoProducto, setSeleccionandoProducto] = useState<1 | 2 | null>(null);
   const [comparado, setComparado] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProductos = async () => {
+      const data = await getProductos();
+      setProductos(data);
+      setLoading(false);
+    };
+    fetchProductos();
+  }, []);
 
   const seleccionarProducto = (producto: Producto) => {
     if (seleccionandoProducto === 1) {
@@ -34,7 +31,6 @@ export default function PantallaComparacion() {
     setModalVisible(false);
   };
 
-  // Indica cuál producto es más barato para la comparación de flechas
   const isProduct1Cheaper = producto1 && producto2 ? producto1.precio < producto2.precio : false;
 
   const renderProductoCard = (producto: Producto | null, lado: 1 | 2) => {
@@ -50,15 +46,13 @@ export default function PantallaComparacion() {
       } else if (producto.precio > otroProducto.precio) {
         iconName = 'arrowup';
         iconColor = 'red';
-      } else {
-        iconName = null; // Precios iguales, sin flecha
       }
     }
 
     return (
       <View style={styles.card}>
         <Text style={styles.etiqueta}>Nombre:</Text>
-        <Text style={styles.valor}>{producto?.name ?? ''}</Text>
+        <Text style={styles.valor}>{producto?.nombre ?? ''}</Text>
         <Text style={styles.etiqueta}>Categoría:</Text>
         <Text style={styles.valor}>{producto?.categoria ?? ''}</Text>
         <Text style={styles.etiqueta}>Supermercado:</Text>
@@ -82,7 +76,7 @@ export default function PantallaComparacion() {
           onPress={() => {
             setSeleccionandoProducto(lado);
             setModalVisible(true);
-            setComparado(false); // Reinicia comparación si se cambia producto
+            setComparado(false);
           }}
         />
       </View>
@@ -111,61 +105,58 @@ export default function PantallaComparacion() {
     );
   };
 
+  const renderItem = ({ item }: { item: Producto }) => (
+  <TouchableOpacity onPress={() => seleccionarProducto(item)} style={styles.item}>
+    {item.imagenURL ? (
+      <Image source={{ uri: item.imagenURL }} style={styles.productImage} />
+    ) : (
+      <View style={[styles.productImage, styles.placeholderImage]}>
+        <Text>Sin imagen</Text>
+      </View>
+    )}
+    <View>
+      <Text style={styles.valor}>{item.nombre}</Text>
+      <Text style={styles.valor}>${item.precio.toFixed(2)}</Text>
+    </View>
+  </TouchableOpacity>
+);
+
+
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>Comparar Productos</Text>
-
-      <View style={styles.productosContainer}>
-        {renderProductoCard(producto1, 1)}
-        {renderProductoCard(producto2, 2)}
-      </View>
-
-      {renderComparacion()}
-
-      <Modal visible={modalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitulo}>Seleccionar Producto</Text>
-          <FlatList
-            data={productosDisponibles}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.itemProducto}
-                onPress={() => seleccionarProducto(item)}
-              >
-                <Text>{item.name} - {item.supermercado} - ${item.precio}</Text>
-              </TouchableOpacity>
-            )}
+      {loading ? (
+        <ActivityIndicator size="large" />
+      ) : (
+        <>
+          <View style={styles.cardsContainer}>
+            {renderProductoCard(producto1, 1)}
+            {renderProductoCard(producto2, 2)}
+          </View>
+          <Button
+            title="Comparar"
+            onPress={() => setComparado(true)}
+            disabled={!producto1 || !producto2}
           />
-          <Button title="Cerrar" onPress={() => setModalVisible(false)} />
-        </View>
-      </Modal>
+          {renderComparacion()}
 
-      <TouchableOpacity
-        style={[
-          styles.botonComparar,
-          !(producto1 && producto2) && { backgroundColor: '#ccc' },
-        ]}
-        disabled={!(producto1 && producto2)}
-        onPress={() => setComparado(true)}
-      >
-        <Text style={styles.botonTexto}>Comparar</Text>
-      </TouchableOpacity>
+          <Modal visible={modalVisible} animationType="slide">
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Selecciona un producto</Text>
+              <FlatList
+              data={productos}
+              keyExtractor={(item) => item.id || item.nombre || Math.random().toString()}
+              renderItem={renderItem}
+            />
 
-      <TouchableOpacity
-        style={[styles.botonComparar, { backgroundColor: '#555', marginTop: 10 }]}
-        onPress={() => {
-          setProducto1(null);
-          setProducto2(null);
-          setComparado(false);
-          setSeleccionandoProducto(null);
-        }}
-      >
-        <Text style={styles.botonTexto}>Reiniciar</Text>
-      </TouchableOpacity>
+              <Button title="Cerrar" onPress={() => setModalVisible(false)} />
+            </View>
+          </Modal>
+        </>
+      )}
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
@@ -175,6 +166,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignSelf: 'center',
   },
+  cardsContainer: { flexDirection: 'row', justifyContent: 'space-between' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
   productosContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -223,4 +216,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
+  item: { paddingVertical: 8, borderBottomWidth: 1 },
+  productImage: {
+  width: 60,
+  height: 60,
+  borderRadius: 8,
+  marginRight: 10,
+  resizeMode: 'cover',
+},
+placeholderImage: {
+  backgroundColor: '#ccc',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+
 });

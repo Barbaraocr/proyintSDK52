@@ -12,10 +12,10 @@ const IconSelectionScreen: React.FC = () => {
   const [category, setCategory] = useState('');
   const [productimageURL, setProductImageURL] = useState('');
   const [price, setPrice] = useState('');
+  const [supermarket, setSupermarket] = useState(''); // 👈 Nuevo estado
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  // Carga las categorías desde Firebase al montar el componente
   useEffect(() => {
     const loadCategories = async () => {
       const categoryList = await getCategorys();
@@ -24,26 +24,25 @@ const IconSelectionScreen: React.FC = () => {
     loadCategories();
   }, []);
 
-  const router = useRouter();
-
-  // Manejador para agregar el producto
+>>>>>>> master
   const handleAddProduct = async () => {
-    console.log('Product Info:', { productName, productimageURL, price, selectedIcon });
+    console.log('Product Info:', { productName, productimageURL, price, selectedIcon, supermarket });
 
-    if (!productName || !selectedIcon || !productimageURL || !price) {
+    if (!productName || !selectedIcon || !productimageURL || !price || !supermarket) {
       Alert.alert('Error', 'Faltan datos. Por favor, completa todos los campos antes de agregar el producto.');
       return;
     }
 
     try {
-      await addProducto(productName, category, productimageURL, parseFloat(price));
+      await addProducto(productName, category, productimageURL, parseFloat(price), supermarket); // 👈 Asegúrate que esta función acepte el campo
       Alert.alert('Éxito', '¡Producto agregado exitosamente!');
 
-      // Limpia los campos del formulario después de agregar el producto
+      // Limpiar los campos
       setProductName('');
       setCategory('');
       setPrice('');
       setProductImageURL('');
+      setSupermarket('');
       setSelectedIcon(null);
     } catch (error) {
       console.error('Error al agregar el producto:', error);
@@ -64,7 +63,6 @@ const IconSelectionScreen: React.FC = () => {
     </TouchableOpacity>
       <Text style={styles.title}>Escoge un ícono</Text>
 
-      {/* Selección de íconos */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollContainer}>
         <View style={styles.iconContainer}>
           {categories.map((category) => (
@@ -76,9 +74,6 @@ const IconSelectionScreen: React.FC = () => {
                   setSelectedIcon(category.nombre);
                   setProductImageURL(category.iconURL);
                   setCategory(category.nombre);
-                  console.log(category)
-                  console.log(productimageURL)
-                  console.log(selectedIcon)
                 }
               }}
             >
@@ -88,7 +83,7 @@ const IconSelectionScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Detalles del producto */}
+      {/* Campos de entrada */}
       <View style={styles.detailsContainer}>
         <TextInput
           style={styles.input}
@@ -103,9 +98,14 @@ const IconSelectionScreen: React.FC = () => {
           onChangeText={setPrice}
           keyboardType="numeric"
         />
+        <TextInput
+          style={styles.input}
+          placeholder="Supermercado"
+          value={supermarket}
+          onChangeText={setSupermarket}
+        />
       </View>
 
-      {/* Botón para agregar producto */}
       <TouchableOpacity style={styles.addButton} onPress={handleAddProduct}>
         <Text style={styles.addButtonText}>Agregar Producto</Text>
       </TouchableOpacity>

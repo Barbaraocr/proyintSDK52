@@ -87,6 +87,7 @@ const handleCreateList = async () => {
     setNombreLista('');
     setPresupuesto('');
     setSelectedProductos([]);
+    router.replace('/'); 
   } catch (error) {
     console.error("Error al crear la lista:", error);
     Alert.alert('Error', 'Hubo un problema al crear la lista.');
@@ -177,8 +178,9 @@ const handleCreateList = async () => {
                     onChangeText={setPresupuesto}
                   />
 
-                  <TouchableOpacity style={styles.createButton}>
-                    <Text style={styles.createButtonText} onPress={handleCreateList}>Crear lista</Text>
+                  <TouchableOpacity style={styles.createButton} onPress={handleCreateList}>
+                    <Text style={styles.createButtonText}>Crear lista</Text>
+                    
                   </TouchableOpacity>
                 </View>
 
